@@ -52,7 +52,7 @@ export type GameAction =
 
 export interface ActionResult {
   success: boolean;
-  actionType: ActionType;
+  actionType?: ActionType;
   message: string;
   hpDelta?: number;
   scoreDelta?: number;

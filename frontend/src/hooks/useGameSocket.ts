@@ -47,6 +47,7 @@ export function useGameSocket(sessionId: string | null) {
           setMyHand(msg.payload);
           break;
         case "agent_report":
+          console.log("새로운 리포트 추가 시도: ", msg.payload);
           addReport(msg.payload);
           setGenerating(false);
           break;
@@ -65,9 +66,11 @@ export function useGameSocket(sessionId: string | null) {
           }
           break;
         case "generating_start":
+          console.log("에이전트 생각 시작")
           setGenerating(true);
           break;
         case "generating_end":
+          console.log("에이전트 생각 종료")
           setGenerating(false);
           break;
         case "game_over":

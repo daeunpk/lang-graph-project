@@ -1,6 +1,7 @@
 from app.graph.factory import get_graph
 from app.db.session_store import game_sessions
 from app.engine.game_engine import GameEngine
+import asyncio
 
 class GameService:
     @staticmethod
@@ -20,13 +21,14 @@ class GameService:
         # 에이전트 보고 단계까지 진행 후 pause_for_human에서 멈춤
         config = {"configurable": {"thread_id": engine.session_id}}
         
-        try:
-            # config를 반드시 함께 전달해야 합니다.
+        async def run_initial_graph():
+            await asyncio.sleep(1.5) # 소켓 연결을 위한 여유 시간
             await graph.ainvoke(initial_state, config=config)
-        except Exception as e:
-            print(f"Graph Initialization Error: {e}")
+            
+        asyncio.create_task(run_initial_graph())
         
         return engine.session_id, engine.human_id
+
 
     @staticmethod
     async def perform_action(session_id, p_id, action_type, payload):
