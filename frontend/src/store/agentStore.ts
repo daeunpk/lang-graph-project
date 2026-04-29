@@ -36,16 +36,20 @@ export const useAgentStore = create<AgentStoreState & AgentStoreActions>()(
       set((s) => {
         s.agents = agents;
       }),
-
+    
     addReport: (report) =>
-      set((s) => {
-        const exists = s.reports.findIndex((r) => r.reportId === report.reportId);
-        if (exists >= 0) {
-          s.reports[exists] = report;
-        } else {
-          s.reports.unshift(report);
-        }
-      }),
+        set((s) => {
+            const exists = s.reports.findIndex((r) => r.reportId === report.reportId);
+            if (exists >= 0) {
+            // Immer 방식: 직접 수정하면 Immer가 알아서 불변성을 유지하며 업데이트합니다.
+            s.reports[exists] = report;
+            } else {
+            // Immer 방식: 직접 push 또는 unshift
+            s.reports.unshift(report);
+            }
+            // Immer에서는 별도의 return 객체가 필요 없거나, 
+            // 있어도 s를 직접 수정한 내용과 충돌하면 안 됩니다.
+        }),
 
     clearReports: () =>
       set((s) => {

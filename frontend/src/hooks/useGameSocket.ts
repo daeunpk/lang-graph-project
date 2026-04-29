@@ -49,7 +49,6 @@ export function useGameSocket(sessionId: string | null) {
         case "agent_report":
           console.log("새로운 리포트 추가 시도: ", msg.payload);
           addReport(msg.payload);
-          setGenerating(false);
           break;
         case "agent_message":
           addMessage(msg.payload);

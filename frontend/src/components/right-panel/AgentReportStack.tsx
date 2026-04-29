@@ -12,35 +12,42 @@ export function AgentReportStack({ sessionId }: AgentReportStackProps) {
   const { gameState } = useGameStore();
   const currentTurn = gameState?.currentTurn ?? 0;
 
-  const currentReports = reports.filter((r) => r.turn === currentTurn);
+  const currentReports = reports;
 
   return (
     <div className="agent-report-stack">
-      <div className="stack-header">
+        <div className="stack-header">
         <span className="stack-title">에이전트 보고</span>
         {isGenerating && (
-          <div className="generating-indicator">
-            <div className="generating-dot" />
+            <div className="generating-indicator">
             <span>분석 중...</span>
-          </div>
+            </div>
         )}
-      </div>
+        </div>
 
-      {agents.length === 0 && (
-        <p className="stack-empty">에이전트 정보 로딩 중...</p>
-      )}
+        {/* 에이전트 리스트 기준이 아니라, 실제 들어온 '보고서' 기준으로 먼저 그려봅니다. */}
+        {currentReports.length === 0 ? (
+        <p className="stack-empty">아직 보고서가 없습니다.</p>
+        ) : (
+        currentReports.map((report) => {
+            // 보고서에 맞는 에이전트 프로필을 찾되, 없으면 기본값 생성
+            const agentProfile = agents.find((a) => a.agentId === report.agentId) || {
+            agentId: report.agentId,
+            name: report.agentName || report.agentId,
+            role: report.role,
+            roleLabel: "에이전트"
+            };
 
-      {agents.map((agent) => {
-        const report = currentReports.find((r) => r.agentId === agent.agentId);
-        return (
-          <AgentReportCard
-            key={agent.agentId}
-            agent={agent}
-            report={report ?? null}
-            sessionId={sessionId}
-          />
-        );
-      })}
+            return (
+            <AgentReportCard
+                key={report.reportId}
+                agent={agentProfile as any}
+                report={report}
+                sessionId={sessionId}
+            />
+            );
+        })
+        )}
     </div>
-  );
+    );
 }
