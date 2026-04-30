@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { AgentReportStack } from "./AgentReportStack";
 import { useUIStore } from "../../store/uiStore";
 import { useGameStore } from "../../store/gameStore";

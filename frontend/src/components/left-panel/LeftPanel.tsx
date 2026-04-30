@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { PublicInfoPanel } from "./PublicInfoPanel";
 import { SystemLogPanel } from "./SystemLogPanel";
 import { PlayerMemoCard } from "./PlayerMemoCard";

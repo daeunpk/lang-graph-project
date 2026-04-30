@@ -50,10 +50,10 @@ export const useUIStore = create<UIStoreState & UIStoreActions>()(
     notification: null,
     notificationTimeout: null,
 
-    openModal: (type, payload = null) =>
+    openModal: (type, payload) =>
       set((s) => {
         s.activeModal = type;
-        s.modalPayload = payload;
+        s.modalPayload = payload ?? null;
       }),
 
     closeModal: () =>
@@ -93,23 +93,31 @@ export const useUIStore = create<UIStoreState & UIStoreActions>()(
     showNotification: (message, level = "info") => {
       const prev = get().notificationTimeout;
       if (prev) clearTimeout(prev);
+
       set((s) => {
         s.notification = { message, level };
       });
+
       const timeout = setTimeout(() => {
         set((s) => {
           s.notification = null;
           s.notificationTimeout = null;
         });
       }, 3500);
+
       set((s) => {
         s.notificationTimeout = timeout;
       });
     },
 
-    clearNotification: () =>
+    clearNotification: () => {
+      const prev = get().notificationTimeout;
+      if (prev) clearTimeout(prev);
+
       set((s) => {
         s.notification = null;
-      }),
+        s.notificationTimeout = null;
+      });
+    },
   }))
 );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { AgentProfile, AgentReport } from "../../types/agent";
 import { useAgentStore } from "../../store/agentStore";
 import { useUIStore } from "../../store/uiStore";
@@ -19,8 +19,12 @@ const ROLE_ICONS: Record<string, string> = {
   resource_analyst: "🟡",
 };
 
-export function AgentReportCard({ agent, report, sessionId }: AgentReportCardProps) {
-  const { openDrawer, setFollowupTarget, showNotification } = useUIStore();
+export function AgentReportCard({
+  agent,
+  report,
+  sessionId,
+}: AgentReportCardProps) {
+  const { openDrawer, showNotification } = useUIStore();
   const { gameState } = useGameStore();
   const { setPendingFollowup } = useAgentStore();
   const [followupText, setFollowupText] = useState("");
@@ -32,18 +36,21 @@ export function AgentReportCard({ agent, report, sessionId }: AgentReportCardPro
 
   const handleFollowup = async () => {
     if (!followupText.trim()) return;
+
     const result = await sendAction(sessionId, playerId, "followup", {
       targetAgentId: agent.agentId,
       question: followupText,
     });
+
     if (result.success) {
       setPendingFollowup(agent.agentId);
       setFollowupText("");
       setShowFollowup(false);
       showNotification(`${agent.name}에게 질문 전송`, "info");
-    } else {
-      showNotification(result.error ?? "오류", "error");
+      return;
     }
+
+    showNotification(result.error ?? "오류", "error");
   };
 
   return (
@@ -56,10 +63,19 @@ export function AgentReportCard({ agent, report, sessionId }: AgentReportCardPro
             <div className="agent-role-label">{agent.roleLabel}</div>
           </div>
         </div>
+
         {report && (
           <div className="agent-confidence">
             <span className="conf-label">확신도</span>
-            <span className={`conf-value ${report.confidence >= 0.7 ? "high" : report.confidence >= 0.4 ? "mid" : "low"}`}>
+            <span
+              className={`conf-value ${
+                report.confidence >= 0.7
+                  ? "high"
+                  : report.confidence >= 0.4
+                    ? "mid"
+                    : "low"
+              }`}
+            >
               {formatConfidence(report.confidence)}
             </span>
           </div>
@@ -78,13 +94,17 @@ export function AgentReportCard({ agent, report, sessionId }: AgentReportCardPro
         <>
           <div className="agent-card-content">
             <p className="agent-report-text">{truncate(report.content, 180)}</p>
+
             {report.uncertainties.length > 0 && (
               <div className="uncertainties">
                 {report.uncertainties.map((u, i) => (
-                  <span key={i} className="uncertainty-tag">? {u}</span>
+                  <span key={i} className="uncertainty-tag">
+                    ? {u}
+                  </span>
                 ))}
               </div>
             )}
+
             {report.suggestedAction && (
               <div className="suggested-action">
                 <span className="suggested-label">제안:</span>
@@ -100,6 +120,7 @@ export function AgentReportCard({ agent, report, sessionId }: AgentReportCardPro
             >
               상세 보기
             </button>
+
             {isLeaderMode && perms.canFollowup && (
               <button
                 className="card-action-btn followup"
@@ -118,7 +139,9 @@ export function AgentReportCard({ agent, report, sessionId }: AgentReportCardPro
                 value={followupText}
                 onChange={(e) => setFollowupText(e.target.value)}
                 placeholder={`${agent.name}에게 질문...`}
-                onKeyDown={(e) => e.key === "Enter" && handleFollowup()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleFollowup();
+                }}
               />
               <button
                 className="followup-send-btn"

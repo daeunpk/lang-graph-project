@@ -17,6 +17,9 @@ export async function sendAction<T = unknown>(
       return { success: false, error: err.detail ?? "서버 오류" };
     }
     const data = await res.json();
+    if (data && data.success === false) {
+      return { success: false, data, error: data.message ?? "요청 실패" };
+    }
     return { success: true, data };
   } catch (e) {
     return { success: false, error: "네트워크 오류" };

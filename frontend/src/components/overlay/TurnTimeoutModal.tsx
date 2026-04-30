@@ -1,7 +1,5 @@
-import React from "react";
 import { useUIStore } from "../../store/uiStore";
 import { sendAction } from "../../utils/sendAction";
-import { useGameStore } from "../../store/gameStore";
 
 interface TurnTimeoutModalProps {
   sessionId: string;
@@ -9,7 +7,6 @@ interface TurnTimeoutModalProps {
 
 export function TurnTimeoutModal({ sessionId }: TurnTimeoutModalProps) {
   const { activeModal, closeModal, showNotification } = useUIStore();
-  const { gameState } = useGameStore();
 
   if (activeModal !== "turn_timeout") return null;
 
@@ -33,6 +30,7 @@ export function TurnTimeoutModal({ sessionId }: TurnTimeoutModalProps) {
         <p className="modal-desc">
           턴 제한 시간이 초과되었습니다. 자동으로 휴식이 진행되거나, 지금 행동을 선택할 수 있습니다.
         </p>
+
         <div className="modal-actions">
           <button className="modal-btn rest" onClick={handleRest}>
             휴식 선택

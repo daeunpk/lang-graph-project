@@ -1,4 +1,3 @@
-import React from "react";
 import { MyHandSection } from "./MyHandSection";
 import { ActionToolbar } from "./ActionToolbar";
 import { LeaderCommunicationPanel } from "./LeaderCommunicationPanel";

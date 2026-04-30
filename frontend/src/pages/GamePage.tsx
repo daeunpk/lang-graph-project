@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { GameShell } from "../components/layout/GameShell";
 import { useGameSocket } from "../hooks/useGameSocket";
@@ -17,7 +17,9 @@ export default function GamePage() {
       navigate("/onboarding");
       return;
     }
+
     setLoading(true);
+
     fetchGameState(sessionId).then((state) => {
       if (state) setGameState(state);
       setLoading(false);

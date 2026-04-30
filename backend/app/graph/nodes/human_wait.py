@@ -1,6 +1,7 @@
 from app.db.session_store import game_sessions
 from app.services.websocket_service import manager
 from app.utils.game_helpers import get_filtered_state
+from datetime import datetime
 
 async def human_wait_node(state):
     session_id = state.get('session_id')
@@ -11,6 +12,7 @@ async def human_wait_node(state):
 
     # 1. 페이즈를 인간 턴으로 변경
     engine.current_phase = "human_turn"
+    engine.turn_started_at = datetime.now().isoformat()
     
     # 2. 로그 전송: 이제 당신의 차례입니다.
     await manager.broadcast_to_session(session_id, {

@@ -1,4 +1,3 @@
-import React from "react";
 import { MainLayout } from "./MainLayout";
 import { TopStatusBar } from "../topbar/TopStatusBar";
 import { LeftPanel } from "../left-panel/LeftPanel";

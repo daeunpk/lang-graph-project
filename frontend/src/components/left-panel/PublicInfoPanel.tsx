@@ -1,4 +1,3 @@
-import React from "react";
 import { useGameStore } from "../../store/gameStore";
 import { getZoneColor, getZoneLabel } from "../../utils/format";
 
@@ -55,6 +54,44 @@ export function PublicInfoPanel() {
             <span className="player-hp-text">{p.hp}</span>
           </div>
         ))}
+      </div>
+
+      <div className="info-section">
+        <h3 className="info-section-title">상대 카드 뒷면</h3>
+        {players
+          .filter((p) => !p.isHuman)
+          .map((p) => (
+            <div key={`${p.playerId}-hand`} className="opponent-hand-row">
+              <span className="opponent-name">{p.name}</span>
+              <div className="opponent-card-backs">
+                {p.hand.map((card) => {
+                  const color = getZoneColor(String(card.zone));
+                  const truthLabel =
+                    card.truth === "genuine"
+                      ? "T"
+                      : card.truth === "misinformation"
+                        ? "F"
+                        : "?";
+
+                  return (
+                    <div
+                      key={card.cardId}
+                      className="opponent-card-back"
+                      style={{ borderColor: color }}
+                    >
+                      <span
+                        className="opponent-card-zone"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className={`opponent-card-truth ${card.truth}`}>
+                        {truthLabel}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
       </div>
     </div>
   );

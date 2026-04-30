@@ -1,4 +1,3 @@
-import React from "react";
 import type { GamePhase } from "../../types/game";
 
 const PHASE_LABELS: Record<GamePhase, string> = {

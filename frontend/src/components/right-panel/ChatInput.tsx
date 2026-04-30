@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore'; // [핵심] 이 줄이 있어야 오류가 사라집니다.
 import './ChatInput.css';
 

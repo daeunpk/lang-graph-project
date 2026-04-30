@@ -1,4 +1,3 @@
-import React from "react";
 import { HandCard } from "./HandCard";
 import { useGameStore } from "../../store/gameStore";
 

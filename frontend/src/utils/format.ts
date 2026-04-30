@@ -6,6 +6,8 @@ export function formatTime(seconds: number): string {
 
 export function formatTimestamp(iso: string): string {
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--:--:--";
+
   return d.toLocaleTimeString("ko-KR", {
     hour: "2-digit",
     minute: "2-digit",

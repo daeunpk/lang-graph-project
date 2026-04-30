@@ -11,6 +11,10 @@ class GameActionRequest(BaseModel):
     targetAgentIds: Optional[Union[str, List[str]]] = None
     question: Optional[str] = None
     targetAgentId: Optional[str] = None
+    targetPlayerId: Optional[str] = None
+    infoType: Optional[str] = None
+    infoValue: Optional[str] = None
+    targetCardIds: Optional[List[str]] = None
 
 class ActionResponse(BaseModel):
     success: bool

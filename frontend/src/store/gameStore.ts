@@ -60,9 +60,19 @@ export const useGameStore = create<GameStoreState & GameStoreActions>()(
             isSelected: s.selectedCardId === c.cardId,
             isPlayable: s.isHumanTurn,
             knownNumber: c.number,
-            knownZone: null,
-            knownTruth: null,
-            hintHistory: [],
+            knownZone:
+              c.zone !== "unknown"
+                ? c.zone
+                : [...(c.hintHistory ?? [])]
+                    .reverse()
+                    .find((h: any) => h.hintType === "zone")?.value ?? null,
+            knownTruth:
+              c.truth !== "unknown"
+                ? c.truth
+                : [...(c.hintHistory ?? [])]
+                    .reverse()
+                    .find((h: any) => h.hintType === "truth")?.value ?? null,
+            hintHistory: c.hintHistory ?? [],
           } as HandCard));
         }
       }),

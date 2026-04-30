@@ -18,6 +18,7 @@ export interface HintEntry {
   hintType: "number" | "zone" | "truth";
   value: string;
   givenBy: string;
+  message?: string;
 }
 
 export interface HandCard extends Card {

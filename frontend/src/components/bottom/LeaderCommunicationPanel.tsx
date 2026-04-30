@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAgentStore } from "../../store/agentStore";
 import { useGameStore } from "../../store/gameStore";
 import { sendAction } from "../../utils/sendAction";

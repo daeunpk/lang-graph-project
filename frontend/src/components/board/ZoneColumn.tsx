@@ -1,4 +1,4 @@
-import React from "react";
+import type { CSSProperties } from "react";
 import { InstallSlot } from "./InstallSlot";
 import type { ZoneState } from "../../types/game";
 import { getZoneColor, getZoneLabel } from "../../utils/format";
@@ -10,9 +10,10 @@ interface ZoneColumnProps {
 
 export function ZoneColumn({ zone, sessionId }: ZoneColumnProps) {
   const color = getZoneColor(zone.zoneId);
+  const nextSlotIndex = zone.nextExpected - 1;
 
   return (
-    <div className="zone-column" style={{ "--zone-color": color } as React.CSSProperties}>
+    <div className="zone-column" style={{ "--zone-color": color } as CSSProperties}>
       <div className="zone-header" style={{ borderColor: color }}>
         <div className="zone-dot" style={{ backgroundColor: color }} />
         <span className="zone-label">{getZoneLabel(zone.zoneId)}</span>
@@ -24,7 +25,7 @@ export function ZoneColumn({ zone, sessionId }: ZoneColumnProps) {
             slotIndex={i}
             zoneId={zone.zoneId}
             card={zone.slots[i] ?? null}
-            isNext={i === zone.nextExpected}
+            isNext={i === nextSlotIndex}
             sessionId={sessionId}
           />
         ))}

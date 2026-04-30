@@ -1,4 +1,3 @@
-import React from "react";
 import { LeaderPanel } from "./LeaderPanel";
 import { AgentReportStack } from "./AgentReportStack";
 import { useGameStore } from "../../store/gameStore";

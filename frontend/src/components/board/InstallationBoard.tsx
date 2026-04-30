@@ -1,4 +1,3 @@
-import React from "react";
 import { ZoneColumn } from "./ZoneColumn";
 import type { BoardState } from "../../types/game";
 

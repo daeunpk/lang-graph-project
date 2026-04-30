@@ -13,7 +13,7 @@ export interface PlayerPermissions {
 
 export function getPlayerPermissions(
   state: GameState | null,
-  playerId: string
+  _playerId: string
 ): PlayerPermissions {
   if (!state) {
     return {

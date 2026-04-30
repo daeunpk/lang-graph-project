@@ -59,6 +59,13 @@ export interface CardData {
   number: number | null; // 내 카드일 경우 필터링되어 null로 올 수 있음
   zone: any;
   truth: string;
+  hintHistory?: Array<{
+    turn: number;
+    hintType: "number" | "zone" | "truth";
+    value: string;
+    givenBy: string;
+    message?: string;
+  }>;
 }
 
 export interface GameState {

@@ -1,4 +1,3 @@
-import React from "react";
 import { InstallationBoard } from "./InstallationBoard";
 import { RecentActionBanner } from "./RecentActionBanner";
 import { useGameStore } from "../../store/gameStore";

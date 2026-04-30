@@ -1,4 +1,3 @@
-import React from "react";
 import { TurnIndicator } from "./TurnIndicator";
 import { TimerDisplay } from "./TimerDisplay";
 import { ScoreSummary } from "./ScoreSummary";

@@ -1,4 +1,3 @@
-import React from "react";
 import { useGameStore } from "../../store/gameStore";
 import { useUIStore } from "../../store/uiStore";
 import { sendAction } from "../../utils/sendAction";
@@ -25,6 +24,11 @@ export function ActionToolbar({ sessionId }: ActionToolbarProps) {
     openModal("action", { type: "install_prompt" });
   };
 
+  const handleGiveInfo = () => {
+    if (!perms.isHumanTurn) return;
+    openModal("action", { type: "give_info" });
+  };
+
   const handleDiscard = () => {
     if (!selectedCardId || !perms.canDiscard) return;
     openModal("action", { type: "discard", cardId: selectedCardId });
@@ -34,6 +38,15 @@ export function ActionToolbar({ sessionId }: ActionToolbarProps) {
 
   return (
     <div className="action-toolbar">
+      <button
+        className="action-btn info"
+        onClick={handleGiveInfo}
+        title="HP 1을 사용해 동료에게 카드 정보를 전달"
+      >
+        <span className="action-icon">i</span>
+        <span className="action-label">정보</span>
+      </button>
+
       <button
         className={`action-btn install ${!selectedCardId ? "disabled" : ""}`}
         onClick={handleInstall}

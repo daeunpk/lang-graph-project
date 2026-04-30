@@ -1,4 +1,3 @@
-import React from "react";
 import { useUIStore } from "../../store/uiStore";
 import { useAgentStore } from "../../store/agentStore";
 import { formatTimestamp, formatConfidence } from "../../utils/format";

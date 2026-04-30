@@ -21,6 +21,35 @@ type WSMessage =
   | { type: "game_over"; payload: { reason: string; winner?: string } }
   | { type: "error"; payload: { message: string } };
 
+type LooseLogPayload = Partial<LogEntry> & {
+  content?: string;
+  type?: string;
+};
+
+function normalizeLog(payload: LooseLogPayload, currentTurn = 0): LogEntry {
+  const timestamp = payload.timestamp ?? new Date().toISOString();
+
+  return {
+    logId:
+      payload.logId ??
+      `log_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    turn: payload.turn ?? currentTurn,
+    level: payload.level ?? (payload.type === "error" ? "error" : "info"),
+    message: payload.message ?? payload.content ?? "시스템 이벤트",
+    detail: payload.detail,
+    actorId: payload.actorId,
+    actionType: payload.actionType ?? payload.type,
+    timestamp,
+  };
+}
+
+function normalizeMessage(payload: AgentMessage): AgentMessage {
+  return {
+    ...payload,
+    timestamp: payload.timestamp ?? new Date().toISOString(),
+  };
+}
+
 export function useGameSocket(sessionId: string | null) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,10 +80,10 @@ export function useGameSocket(sessionId: string | null) {
           addReport(msg.payload);
           break;
         case "agent_message":
-          addMessage(msg.payload);
+          addMessage(normalizeMessage(msg.payload));
           break;
         case "log_entry":
-          addLog(msg.payload);
+          addLog(normalizeLog(msg.payload, msg.payload.turn ?? 0));
           break;
         case "action_result":
           setActionResult(msg.payload);
