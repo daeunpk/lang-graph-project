@@ -26,6 +26,7 @@ export function useGameSocket(sessionId: string | null) {
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
+  // 스토어에서 액션 함수들을 가져옴
   const { setGameState, setMyHand, addLog, setActionResult } = useGameStore();
   const { addReport, addMessage, setGenerating } = useAgentStore();
   const { showNotification, openModal } = useUIStore();
@@ -47,7 +48,6 @@ export function useGameSocket(sessionId: string | null) {
           setMyHand(msg.payload);
           break;
         case "agent_report":
-          console.log("새로운 리포트 추가 시도: ", msg.payload);
           addReport(msg.payload);
           break;
         case "agent_message":
@@ -65,12 +65,10 @@ export function useGameSocket(sessionId: string | null) {
           }
           break;
         case "generating_start":
-          console.log("에이전트 생각 시작")
-          setGenerating(true);
+          setGenerating(true); // 에이전트 사고 시간 시각화 시작
           break;
         case "generating_end":
-          console.log("에이전트 생각 종료")
-          setGenerating(false);
+          setGenerating(false); // 에이전트 사고 시간 시각화 종료
           break;
         case "game_over":
           openModal("game_end", {

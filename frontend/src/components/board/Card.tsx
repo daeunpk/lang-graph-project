@@ -1,42 +1,36 @@
 import React from 'react';
-import { useGameStore } from '../../store/gameStore'; // [추가] 스토어 연결
+import { useGameStore } from '../../store/gameStore';
 import './Card.css';
 
 interface CardProps {
-  card: {
-    cardId: string; // [추가] 선택을 위해 ID 필요
-    number: number | null;
-    color: string | null;
-  };
+  card: any;
   isMine: boolean;
-  onSelect?: (cardId: string) => void; // [추가] 클릭 핸들러
+  onSelect?: (cardId: string) => void;
 }
 
 export function Card({ card, isMine, onSelect }: CardProps) {
-  // [추가] 현재 인간 턴인지 확인
   const isHumanTurn = useGameStore((state) => state.isHumanTurn);
-  const isFaceDown = isMine && card.number === null;
   
-  // [추가] 내 카드인데 내 턴이 아니면 클릭 막기
+  // 내 카드: 번호 노출, 색상/진위는 unknown 처리 (흑백)
+  // 타인 카드: 번호 숨김, 색상/진위(T/F) 노출
+  const isFaceDownForMe = isMine; 
   const isDisabled = isMine && !isHumanTurn;
-
-  const handleClick = () => {
-    if (isDisabled) return; // 클릭 방지
-    if (onSelect) onSelect(card.cardId);
-  };
 
   return (
     <div 
-      className={`game-card ${isFaceDown ? 'back' : card.color} ${isDisabled ? 'disabled' : ''}`}
-      onClick={handleClick}
+      className={`game-card ${isMine ? 'mine' : card.zone} ${isDisabled ? 'disabled' : ''}`}
+      onClick={() => !isDisabled && onSelect?.(card.cardId)}
     >
-      {isFaceDown ? (
-        <div className="card-inner">?</div>
-      ) : (
-        <div className="card-inner">
+      <div className="card-inner">
+        {isMine ? (
           <span className="card-number">{card.number}</span>
-        </div>
-      )}
+        ) : (
+          <>
+            <span className="card-truth">{card.truth === 'genuine' ? 'T' : 'F'}</span>
+            <span className="card-back-hint">?</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }

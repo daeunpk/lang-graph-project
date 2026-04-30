@@ -1,23 +1,20 @@
 import copy
 
 def get_filtered_state(engine, viewer_id):
-    """
-    보는 사람(viewer_id)에 따라 카드 정보를 마스킹함.
-    """
-    # 1. 엔진의 get_full_state() 결과물을 가져옴
     state = copy.deepcopy(engine.get_full_state())
     
-    # 2. players 리스트를 순회
     for player in state.get('players', []):
-        # [수정] 'id'가 아니라 'playerId'로 비교해야 합니다.
+        # 1. 내 카드인 경우 (번호만 노출, 구역/진위 가림)
         if player['playerId'] == viewer_id:
-            # 내 카드 정보 숨기기
-            if 'hand' in player:
-                for card in player['hand']:
-                    card['number'] = None
-                    card['color'] = None
+            for card in player.get('hand', []):
+                card['zone'] = "unknown"
+                card['truth'] = "unknown"
+                # card['number']는 유지
+        
+        # 2. 남의 카드인 경우 (번호 가림, 구역/진위 노출)
         else:
-            # 타인 카드는 그대로 둠
-            pass
-            
+            for card in player.get('hand', []):
+                card['number'] = None
+                # card['zone'], card['truth']는 유지
+                
     return state

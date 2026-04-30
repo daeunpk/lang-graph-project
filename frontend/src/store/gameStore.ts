@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { GameState, GameConfig, BoardState } from "../types/game";
+import type { GameState, BoardState } from "../types/game";
 import type { HandCard } from "../types/card";
 import type { ActionResult } from "../types/action";
 import type { LogEntry } from "../types/log";
@@ -45,28 +45,27 @@ export const useGameStore = create<GameStoreState & GameStoreActions>()(
     ...initialState,
 
     setGameState: (state) =>
-        set((s) => {
-            s.gameState = state;
-            s.isHumanTurn = state.currentPhase === "human_turn";
-            
-            const myData = state.players.find(p => p.playerId === state.config.playerId);
-            
-            if (myData && myData.hand) {
-            // (c: any)로 시작하여 타입 체크를 유연하게 하고, 결과물에 as HandCard를 붙입니다.
-            s.myHand = myData.hand.map((c: any) => ({
-                cardId: c.cardId,
-                number: c.number,
-                zone: c.zone, // 여기서 string이어도 아래 as HandCard가 해결해줍니다.
-                truth: c.truth,
-                isSelected: s.selectedCardId === c.cardId,
-                isPlayable: s.isHumanTurn,
-                knownNumber: null,
-                knownZone: null,
-                knownTruth: null,
-                hintHistory: [],
-            } as HandCard)); // 명시적으로 HandCard 타입임을 선언
+      set((s) => {
+        s.gameState = state;
+        s.isHumanTurn = state.currentPhase === "human_turn";
+        
+        const myData = state.players.find(p => p.playerId === state.config.playerId);
+        
+        if (myData && myData.hand) {
+          s.myHand = myData.hand.map((c: any) => ({
+            cardId: c.cardId,
+            number: c.number, // 내 카드는 번호만 앎
+            zone: c.zone,
+            truth: c.truth,
+            isSelected: s.selectedCardId === c.cardId,
+            isPlayable: s.isHumanTurn,
+            knownNumber: c.number,
+            knownZone: null,
+            knownTruth: null,
+            hintHistory: [],
+          } as HandCard));
         }
-    }),
+      }),
 
     setMyHand: (hand) =>
       set((s) => {
