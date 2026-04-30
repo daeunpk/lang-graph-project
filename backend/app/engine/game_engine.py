@@ -19,16 +19,54 @@ class GameEngine:
         self.error_count = 0
         self.threshold_reached = False
         
+        # 보드 구역 초기화
         self.zones = {z: {"slots": [None]*5, "next": 1} for z in GameRules.ZONES}
+        
         self.human_id = str(uuid.uuid4())
         self.players = {
-            self.human_id: {"name": human_name, "hp": GameRules.MAX_HP, "score": 0, "is_human": True, "hand": []},
-            "agent_1": {"name": "Flow-1", "hp": GameRules.MAX_HP, "score": 0, "is_human": False, "role": "flow_analyst", "hand": []},
-            "agent_2": {"name": "Risk-2", "hp": GameRules.MAX_HP, "score": 0, "is_human": False, "role": "risk_analyst", "hand": []},
-            "agent_3": {"name": "Res-3", "hp": GameRules.MAX_HP, "score": 0, "is_human": False, "role": "resource_analyst", "hand": []}
+            self.human_id: {
+                "id": self.human_id, 
+                "name": human_name, 
+                "hp": GameRules.MAX_HP, 
+                "score": 0, 
+                "is_human": True, 
+                "hand": []
+            },
+            "agent_1": {
+                "id": "agent_1", 
+                "name": "Flow-1", 
+                "hp": GameRules.MAX_HP, 
+                "score": 0, 
+                "is_human": False, 
+                "role": "flow_analyst", 
+                "hand": []
+            },
+            "agent_2": {
+                "id": "agent_2", 
+                "name": "Risk-2", 
+                "hp": GameRules.MAX_HP, 
+                "score": 0, 
+                "is_human": False, 
+                "role": "risk_analyst", 
+                "hand": []
+            },
+            "agent_3": {
+                "id": "agent_3", 
+                "name": "Res-3", 
+                "hp": GameRules.MAX_HP, 
+                "score": 0, 
+                "is_human": False, 
+                "role": "resource_analyst", 
+                "hand": []
+            }
         }
+        
         self.deck = self._generate_deck()
-        self._deal_initial_hands()
+        
+        # [수정] 카드 분배 상태 플래그 추가 및 메서드 호출
+        self.hands_dealt = False
+        self.deal_initial_hands()
+        
         self.logs = []
 
     def _generate_deck(self):
@@ -37,18 +75,29 @@ class GameEngine:
             for n in GameRules.NUMBERS:
                 # 진위 여부 포함 (실험용으로 20% 오정보)
                 truth = "misinformation" if random.random() < 0.2 else "genuine"
-                deck.append({"cardId": str(uuid.uuid4()), "number": n, "zone": z, "truth": truth})
+                deck.append({
+                    "cardId": str(uuid.uuid4()), 
+                    "number": n, 
+                    "zone": z, 
+                    "truth": truth
+                })
         random.shuffle(deck)
         return deck
 
-    def _deal_initial_hands(self):
+    # [수정] 외부 노드에서 호출 가능하도록 언더바(_) 제거
+    def deal_initial_hands(self):
+        """플레이어들에게 초기 손패 분배"""
         for p_id in self.players:
+            # 기존에 카드가 있다면 비우고 새로 분배 (초기화 보장)
+            self.players[p_id]["hand"] = []
             for _ in range(GameRules.HAND_SIZE):
                 if self.deck:
                     self.players[p_id]["hand"].append(self.deck.pop())
+        
+        self.hands_dealt = True
 
     def get_full_state(self):
-        # 프론트엔드 GameStateSchema와 매칭
+        """서버 내부용/에이전트용 전체 게임 상태 반환 (마스킹 없음)"""
         return {
             "sessionId": self.session_id,
             "config": {
@@ -63,15 +112,27 @@ class GameEngine:
             "currentTurn": self.current_turn,
             "currentPhase": self.current_phase,
             "board": {
-                "zones": [{"zoneId": k, "slots": v["slots"], "maxSlots": 5, "nextExpected": v["next"]} for k, v in self.zones.items()],
+                "zones": [
+                    {
+                        "zoneId": k, 
+                        "slots": v["slots"], 
+                        "maxSlots": 5, 
+                        "nextExpected": v["next"]
+                    } for k, v in self.zones.items()
+                ],
                 "errorCount": self.error_count,
                 "maxErrors": GameRules.MAX_ERRORS
             },
             "players": [
                 {
-                    "playerId": k, "name": v["name"], "isHuman": v["is_human"], 
-                    "hp": v["hp"], "maxHp": GameRules.MAX_HP, 
-                    "individualScore": v["score"], "handSize": len(v["hand"])
+                    "playerId": k, 
+                    "name": v["name"], 
+                    "isHuman": v["is_human"], 
+                    "hp": v["hp"], 
+                    "maxHp": GameRules.MAX_HP, 
+                    "individualScore": v["score"], 
+                    "handSize": len(v["hand"]),
+                    "hand": v["hand"] # [수정] 카드 데이터를 포함시켜야 필터링이 가능함
                 } for k, v in self.players.items()
             ],
             "teamScore": self.team_score,
@@ -94,7 +155,7 @@ class GameEngine:
         elif action_type == "rest":
             res, msg = self._handle_rest(p_id)
         elif action_type == "broadcast" or action_type == "followup":
-            res, msg = True, "Communication sent" # 로그는 서비스에서 처리
+            res, msg = True, "Communication sent"
             
         if res:
             self._check_game_over()
@@ -155,3 +216,38 @@ class GameEngine:
         elif self.current_turn > GameRules.TOTAL_TURNS:
             self.is_game_over = True
             self.game_over_reason = "Final turn reached"
+            
+    def get_agent_decision(self, agent_id):
+        """에이전트가 현재 보드와 자신의 손패를 보고 액션을 결정함"""
+        player = self.players.get(agent_id)
+        if not player:
+            return {"type": "rest", "payload": {}}
+
+        # 1. 설치 가능한 카드가 있는지 확인 (전략적 판단)
+        for card in player["hand"]:
+            for zone_id, zone in self.zones.items():
+                # 현재 구역에서 요구하는 번호와 색상이 일치하는지 확인
+                if card["number"] == zone["next"] and card["zone"] == zone_id:
+                    # 진위 여부가 genuine인 경우 설치 시도
+                    if card["truth"] == "genuine":
+                        return {
+                            "type": "install",
+                            "payload": {
+                                "cardId": card["cardId"],
+                                "targetZone": zone_id,
+                                "targetSlot": zone["next"] - 1
+                            }
+                        }
+        
+        # 2. 설치할 게 없다면 HP가 낮은 경우 휴식, 아니면 무작위 카드 버리기
+        if player["hp"] < 2:
+            return {"type": "rest", "payload": {}}
+        
+        # 3. 버릴 카드 선택 (가장 쓸모없는 카드 하나)
+        if player["hand"]:
+            return {
+                "type": "discard",
+                "payload": {"cardId": player["hand"][0]["cardId"]}
+            }
+            
+        return {"type": "rest", "payload": {}}

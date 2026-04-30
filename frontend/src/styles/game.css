@@ -354,6 +354,49 @@
 }
 .comm-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/*Bottom-card*/
+/* 에이전트 턴일 때 내 카드를 흐리게 표시 */
+.game-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* 보드에 카드가 나타날 때 애니메이션 */
+.anim-pop-in {
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Card.css */
+
+.game-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* [추가] 에이전트 턴일 때 내 카드의 스타일 */
+.game-card.disabled {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+  cursor: not-allowed;
+  transform: scale(0.95); /* 약간 작게 만들어 대기 상태임을 표시 */
+}
+
+/* [추가] 카드가 보드에 설치될 때 애니메이션 (에이전트 액션 시각화용) */
+.anim-pop-in {
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 /* ─── MODALS & OVERLAY ─── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.7);

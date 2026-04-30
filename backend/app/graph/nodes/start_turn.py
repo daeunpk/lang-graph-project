@@ -6,14 +6,21 @@ async def start_turn_node(state):
     session_id = state['session_id']
     engine = game_sessions.get_game(session_id)
     
-    # 1. 카드 분배가 안 됐다면 분배
-    if not engine.hands_dealt:
+    if not engine:
+        return state
+
+    # 1. 카드 분배 확인
+    if not getattr(engine, 'hands_dealt', False):
         engine.deal_initial_hands()
 
-    # 2. 유저에게 필터링된 정보 전송
-    for player_id in engine.all_player_ids:
-        filtered_data = get_filtered_state(engine, player_id)
-        await manager.send_personal_message(player_id, {
-            "type": "game_state",
-            "payload": filtered_data
-        })
+    # 2. 인간 플레이어용 필터링 데이터 생성
+    # (나머지 에이전트들은 서버 내부에서 전체 데이터를 보므로 상관없음)
+    human_view_state = get_filtered_state(engine, engine.human_id)
+    
+    # 3. 소켓으로 전송
+    await manager.broadcast_to_session(session_id, {
+        "type": "game_state",
+        "payload": human_view_state
+    })
+    
+    return state
