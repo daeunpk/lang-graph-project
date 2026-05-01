@@ -4,7 +4,7 @@ import { createSession } from "../utils/sendAction";
 import type { GameCondition } from "../types/game";
 import "../styles/global.css";
 
-const SCORE_LABEL = "게임 점수는 팀 완성도(0~25점)로 계산되며, 20점(각 구역 4번까지)을 기본 완성 목표로 봅니다.";
+const SCORE_LABEL = "게임 점수는 팀 완성도(0~20점)로 계산되며, 각 구역 4번까지 설치하면 완성입니다.";
 
 const CONDITIONS: { value: GameCondition; scoreLabel: string; rewardLabel: string; interactionLabel: string }[] = [
   {

@@ -113,9 +113,25 @@
 .zone-status-progress { font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono); }
 .zone-mini-progress { width: 40px; height: 4px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
 .zone-mini-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+.deck-status-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  padding: 0.45rem;
+}
+.deck-primary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  margin-bottom: 0.35rem;
+}
+.deck-primary-row strong { color: var(--accent-primary); font-weight: 800; }
 .deck-status-row {
-  display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.35rem 0;
-  font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-mono);
+  display: flex; flex-wrap: wrap; gap: 0.35rem;
+  font-size: 0.62rem; color: var(--text-muted); font-family: var(--font-mono);
 }
 .deck-status-row span {
   border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
@@ -212,45 +228,63 @@
   position: relative;
 }
 .slot-firework {
-  width: 58px;
-  height: 34px;
+  width: 62px;
+  height: 38px;
   position: relative;
-  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--zone-color) 28%, transparent));
+  filter: drop-shadow(0 2px 5px color-mix(in srgb, var(--zone-color) 24%, transparent));
 }
 .slot-bloom {
   position: absolute;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 36px;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 50% 50%, #ffffff 0 8%, var(--zone-color) 9% 12%, transparent 14%),
+    radial-gradient(circle at 50% 26%, #ffffff 0 5%, color-mix(in srgb, var(--zone-color) 82%, #ffffff) 6% 8%, transparent 10%),
     repeating-conic-gradient(
-      from -4deg,
-      color-mix(in srgb, var(--zone-color) 92%, #ffffff) 0deg 3deg,
-      transparent 3deg 30deg
+      from -24deg at 50% 26%,
+      rgba(255,255,255,0.92) 0deg 1.2deg,
+      color-mix(in srgb, var(--zone-color) 72%, #f8fafc) 1.2deg 2.2deg,
+      transparent 2.2deg 16deg
     );
   box-shadow:
-    0 0 12px color-mix(in srgb, var(--zone-color) 45%, transparent);
+    0 0 10px color-mix(in srgb, var(--zone-color) 24%, transparent);
+}
+.slot-bloom::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 27%;
+  width: 1.5px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--zone-color) 68%, #ffffff) 38%, transparent 100%);
+  transform: translateX(-50%);
+  box-shadow:
+    -14px 3px 0 -0.4px color-mix(in srgb, var(--zone-color) 52%, transparent),
+    -10px 9px 0 -0.6px color-mix(in srgb, var(--zone-color) 42%, transparent),
+    -5px 6px 0 -0.5px color-mix(in srgb, var(--zone-color) 48%, transparent),
+    5px 6px 0 -0.5px color-mix(in srgb, var(--zone-color) 48%, transparent),
+    10px 9px 0 -0.6px color-mix(in srgb, var(--zone-color) 42%, transparent),
+    14px 3px 0 -0.4px color-mix(in srgb, var(--zone-color) 52%, transparent);
 }
 .slot-bloom::after {
   content: "";
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: 4px;
-  height: 4px;
+  top: 26%;
+  width: 3px;
+  height: 3px;
   transform: translate(-50%, -50%);
   border-radius: 999px;
   background: #ffffff;
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--zone-color) 70%, #ffffff),
-    0 0 9px color-mix(in srgb, var(--zone-color) 70%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--zone-color) 58%, #ffffff),
+    0 0 8px color-mix(in srgb, var(--zone-color) 58%, transparent);
 }
-.slot-bloom:nth-child(1) { left: 15px; top: 2px; }
-.slot-bloom:nth-child(2) { left: 1px; top: 13px; transform: scale(0.72) rotate(10deg); }
-.slot-bloom:nth-child(3) { left: 31px; top: 13px; transform: scale(0.72) rotate(-10deg); }
-.slot-bloom:nth-child(4) { left: 7px; top: -5px; transform: scale(0.56) rotate(18deg); }
-.slot-bloom:nth-child(5) { left: 39px; top: -3px; transform: scale(0.56) rotate(-18deg); }
+.slot-bloom:nth-child(1) { left: 15px; top: -2px; }
+.slot-bloom:nth-child(2) { left: 1px; top: 10px; transform: scale(0.72) rotate(8deg); }
+.slot-bloom:nth-child(3) { left: 31px; top: 10px; transform: scale(0.72) rotate(-8deg); }
+.slot-bloom:nth-child(4) { left: 39px; top: -5px; transform: scale(0.56) rotate(-15deg); }
 .slot-card-number {
   position: absolute;
   right: 7px;

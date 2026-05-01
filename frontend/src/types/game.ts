@@ -22,7 +22,7 @@ export interface GameConfig {
 // [수정] 백엔드 GameEngine의 zones 구조에 맞게 slots 내부 타입 변경
 export interface ZoneState {
   zoneId: string;
-  slots: (InstalledCard | null)[]; // 백엔드에서 [None]*5로 초기화됨
+  slots: (InstalledCard | null)[];
   maxSlots: number;
   nextExpected: number;
 }
@@ -92,7 +92,6 @@ export interface GameState {
   completionTargetNumber?: number;
   maxTeamScore?: number;
   targetReached?: boolean;
-  perfectReached?: boolean;
   teamFlow?: {
     mode: "balanced" | "cautious" | "information" | "push" | "conserve";
     label: string;

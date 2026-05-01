@@ -49,7 +49,10 @@ export function ActionModal() {
     });
 
     if (result.success) {
-      showNotification("정보를 전달했습니다.", "success");
+      showNotification(
+        (result.data as { message?: string } | undefined)?.message ?? "정보를 전달했습니다.",
+        "success"
+      );
       closeModal();
       setInfoText("");
       setTargetCardIds([]);

@@ -118,6 +118,18 @@ class GameService:
                 "type": "agent_report",
                 "payload": report
             })
+            await manager.broadcast_to_session(session_id, {
+                "type": "agent_message",
+                "payload": {
+                    "messageId": f"chat_{datetime.now().timestamp()}_{agent_id}",
+                    "agentId": agent_id,
+                    "agentName": engine.players[agent_id]["name"],
+                    "content": GameService._build_agent_chat(engine, agent_id, decision),
+                    "messageType": "free_chat",
+                    "turn": engine.current_turn,
+                    "timestamp": datetime.now().isoformat()
+                }
+            })
 
             await asyncio.sleep(GameRules.TURN_TIME_LIMIT)
 
@@ -229,6 +241,41 @@ class GameService:
             "isFollowupResponse": False,
             "timestamp": datetime.now().isoformat()
         }
+
+    @staticmethod
+    def _build_agent_chat(engine, agent_id, decision):
+        agent_name = engine.players[agent_id]["name"]
+        action_type = decision["type"]
+        payload = decision.get("payload", {})
+
+        if action_type == "give_info":
+            target_id = payload.get("targetPlayerId") or payload.get("targetAgentId")
+            target_name = engine.players.get(target_id, {}).get("name", "동료")
+            info_type = payload.get("infoType")
+            info_value = payload.get("infoValue")
+            value_label = {
+                "genuine": "맞는 정보",
+                "misinformation": "오정보",
+                "red": "빨간 구역",
+                "blue": "파란 구역",
+                "green": "초록 구역",
+                "yellow": "노란 구역",
+                "purple": "보라 구역",
+            }.get(info_value, info_value)
+            type_label = "색" if info_type == "zone" else "진위" if info_type == "truth" else "정보"
+            return f"{target_name}에게 {type_label} 정보를 먼저 공유할게요. 값은 {value_label} 쪽으로 보입니다."
+
+        if action_type == "install":
+            zone = payload.get("targetZone", "해당")
+            return f"저는 {zone} 구역 설치를 시도해볼게요. 확신이 완벽하진 않지만 지금 흐름상 필요해 보여요."
+
+        if action_type == "discard":
+            return "제 손패에서 우선순위가 낮은 카드를 갱신해볼게요. 막힌 정보를 풀어보겠습니다."
+
+        if action_type == "rest":
+            return "이번에는 HP를 아껴둘게요. 다음 행동을 위해 잠깐 정리하겠습니다."
+
+        return f"{agent_name}는 현재 보드와 손패 정보를 다시 확인하고 있어요."
 
     @staticmethod
     def _format_memory(engine, agent_id):

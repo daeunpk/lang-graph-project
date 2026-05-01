@@ -19,7 +19,7 @@ export function GameEndModal({ sessionId }: GameEndModalProps) {
 
   const playerId = localStorage.getItem("playerId") ?? "";
   const breakdown = gameState ? computeScoreBreakdown(gameState, playerId) : null;
-  const maxScore = gameState?.maxTeamScore ?? 25;
+  const maxScore = gameState?.maxTeamScore ?? 20;
   const targetScore = gameState?.completionTargetScore ?? gameState?.teamScoreThreshold ?? 20;
 
   const handleResult = () => {

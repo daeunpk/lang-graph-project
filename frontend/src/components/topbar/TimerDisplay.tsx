@@ -11,7 +11,7 @@ export function TimerDisplay() {
   const currentActor = gameState?.players.find(
     (p) => p.playerId === gameState.currentActorId
   );
-  const timeLimit = gameState?.config.turnTimeLimit ?? 20;
+  const timeLimit = gameState?.config.turnTimeLimit ?? 30;
   const startedAt = gameState?.turnStartedAt;
   const timeoutKey = `${gameState?.currentTurn ?? 0}-${gameState?.currentPhase ?? "none"}-${startedAt ?? ""}`;
   const timeoutRef = useRef<string | null>(null);

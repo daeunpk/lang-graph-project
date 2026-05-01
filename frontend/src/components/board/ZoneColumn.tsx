@@ -11,6 +11,7 @@ interface ZoneColumnProps {
 export function ZoneColumn({ zone, sessionId }: ZoneColumnProps) {
   const color = getZoneColor(zone.zoneId);
   const nextSlotIndex = zone.nextExpected - 1;
+  const visibleSlotCount = Math.min(zone.maxSlots, 4);
 
   return (
     <div className="zone-column" style={{ "--zone-color": color } as CSSProperties}>
@@ -19,7 +20,7 @@ export function ZoneColumn({ zone, sessionId }: ZoneColumnProps) {
         <span className="zone-label">{getZoneLabel(zone.zoneId)}</span>
       </div>
       <div className="zone-slots">
-        {Array.from({ length: zone.maxSlots }, (_, i) => (
+        {Array.from({ length: visibleSlotCount }, (_, i) => (
           <InstallSlot
             key={i}
             slotIndex={i}

@@ -7,7 +7,7 @@ export function ScoreSummary() {
 
   const playerId = localStorage.getItem("playerId") ?? "";
   const breakdown = computeScoreBreakdown(gameState, playerId);
-  const maxScore = gameState.maxTeamScore ?? 25;
+  const maxScore = gameState.maxTeamScore ?? 20;
   const targetScore = gameState.completionTargetScore ?? gameState.teamScoreThreshold;
 
   return (

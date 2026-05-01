@@ -16,7 +16,16 @@ interface ResultData {
   completionTargetNumber?: number;
   maxTeamScore?: number;
   targetReached?: boolean;
-  perfectReached?: boolean;
+  rewardReport?: {
+    success: boolean;
+    hpRemaining: number;
+    maxHp: number;
+    hpRatio: number;
+    humanCollaborationActions: number;
+    teamCollaborationActions: number;
+    cooperationLevel: string;
+    summary: string;
+  };
   leaderboard: Array<{
     playerId: string;
     name: string;
@@ -64,7 +73,7 @@ export default function ResultPage() {
             <div className="stat-row">
               <span className="stat-label">팀 완성도 점수</span>
               <span className="stat-value team">
-                {result.teamScore}/{result.maxTeamScore ?? 25}
+                {result.teamScore}/{result.maxTeamScore ?? 20}
               </span>
             </div>
             <div className="stat-row">
@@ -74,12 +83,6 @@ export default function ResultPage() {
               <span className={`stat-value ${result.targetReached ? "success" : "error"}`}>
                 {result.completionTargetNumber ?? 4}번까지 / {result.completionTargetScore ?? 20}점
                 {result.targetReached ? " 달성" : " 미달성"}
-              </span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">완벽 보너스</span>
-              <span className={`stat-value ${result.perfectReached ? "success" : ""}`}>
-                {result.perfectReached ? "25점 완성" : "5번 설치는 추가 성과"}
               </span>
             </div>
             <div className="stat-row">
@@ -101,11 +104,14 @@ export default function ResultPage() {
             <div className="reward-rule-box">
               <span className="reward-rule-label">보상 기준</span>
               <p>{result.rewardRule}</p>
-              {result.scoringMode === "coopetition" && (
-                <p>
-                  기준선 {result.teamScoreThreshold}점:
-                  {result.thresholdReached ? " 달성" : " 미달성"}
-                </p>
+              {result.rewardReport && (
+                <>
+                  <p>{result.rewardReport.summary}</p>
+                  <p>
+                    협력 행동: 개인 {result.rewardReport.humanCollaborationActions}회 /
+                    팀 전체 {result.rewardReport.teamCollaborationActions}회
+                  </p>
+                </>
               )}
             </div>
             <div className="leaderboard-box">

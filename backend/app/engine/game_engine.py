@@ -29,7 +29,10 @@ class GameEngine:
         }
         
         # 보드 구역 초기화 (1번부터 시작)
-        self.zones = {z: {"slots": [None]*5, "next": 1} for z in GameRules.ZONES}
+        self.zones = {
+            z: {"slots": [None] * GameRules.COMPLETION_TARGET_NUMBER, "next": 1}
+            for z in GameRules.ZONES
+        }
         
         self.human_id = str(uuid.uuid4())
         self.players = {
@@ -61,8 +64,7 @@ class GameEngine:
     def _generate_deck(self):
         deck = []
         for z in GameRules.ZONES:
-            zone_cards = []
-            numbers = [1, 1, 1, 2, 2, 3, 3, 4, 4, 5]
+            numbers = [1, 1, 1, 2, 2, 3, 3, 4, 4, 4]
             misinformation_indexes = set(random.sample(range(len(numbers)), 2))
             for index, n in enumerate(numbers):
                 truth = "misinformation" if index in misinformation_indexes else "genuine"
@@ -122,7 +124,15 @@ class GameEngine:
             "turnStartedAt": self.turn_started_at,
             "currentActorId": self.current_actor_id,
             "board": {
-                "zones": [{"zoneId": k, "slots": v["slots"], "maxSlots": 5, "nextExpected": v["next"]} for k, v in self.zones.items()],
+                "zones": [
+                    {
+                        "zoneId": k,
+                        "slots": v["slots"],
+                        "maxSlots": GameRules.COMPLETION_TARGET_NUMBER,
+                        "nextExpected": v["next"],
+                    }
+                    for k, v in self.zones.items()
+                ],
                 "errorCount": self.error_count,
                 "maxErrors": GameRules.MAX_ERRORS
             },
@@ -146,16 +156,15 @@ class GameEngine:
             "thresholdReached": self.threshold_reached,
             "completionTargetScore": GameRules.COMPLETION_TARGET_SCORE,
             "completionTargetNumber": GameRules.COMPLETION_TARGET_NUMBER,
-            "maxTeamScore": GameRules.PERFECT_SCORE,
+            "maxTeamScore": GameRules.MAX_TEAM_SCORE,
             "targetReached": self.team_score >= GameRules.COMPLETION_TARGET_SCORE,
-            "perfectReached": self.team_score >= GameRules.PERFECT_SCORE,
             "teamFlow": self.team_flow,
             "isGameOver": self.is_game_over,
             "gameOverReason": self.game_over_reason
         }
 
     def _calculate_fmif_score(self):
-        return sum(zone["next"] - 1 for zone in self.zones.values())
+        return sum(sum(1 for slot in zone["slots"] if slot) for zone in self.zones.values())
 
     def _sync_scores(self):
         self.team_score = self._calculate_fmif_score()
@@ -191,6 +200,8 @@ class GameEngine:
         if player["hp"] <= 0: return False, "Not enough HP"
         
         zone = self.zones[zone_id]
+        if zone["next"] > GameRules.COMPLETION_TARGET_NUMBER:
+            return False, "Zone already completed"
         # [복구] 항상 다음 기대 번호 자리에 설치
         actual_slot = zone["next"] - 1
         is_correct = (card["number"] == zone["next"] and card["zone"] == zone_id and card["truth"] == "genuine")
@@ -207,7 +218,15 @@ class GameEngine:
             
         player["hand"].remove(card)
         if not is_correct:
-            self.discard_pile.append({**card, "discardReason": "failed_install", "installedBy": p_id, "success": False})
+            card.setdefault("hintHistory", []).append({
+                "turn": self.current_turn,
+                "hintType": "failed_install",
+                "value": zone_id,
+                "givenBy": "system",
+                "message": "설치 실패 후 덱으로 되돌아간 카드입니다.",
+            })
+            self.deck.append(card)
+            random.shuffle(self.deck)
         drawn = self._draw_card()
         if drawn:
             player["hand"].append(drawn)
@@ -218,6 +237,7 @@ class GameEngine:
             "cardNumber": card["number"],
             "actualZone": card["zone"],
             "truth": card["truth"],
+            "returnedToDeck": not is_correct,
             "teamScoreAfter": self.team_score,
             "individualScoreAfter": player["score"],
             "deckRemaining": len(self.deck),
@@ -321,14 +341,19 @@ class GameEngine:
         value_label = {
             "genuine": "맞는 정보",
             "misinformation": "오정보",
+            "red": "빨간 구역",
+            "blue": "파란 구역",
+            "green": "초록 구역",
+            "yellow": "노란 구역",
+            "purple": "보라 구역",
         }.get(info_value, info_value)
         type_label = "색깔" if info_type == "zone" else "진위" if info_type == "truth" else info_type
-        cards_label = ", ".join(f"{pos}번 카드" for pos in card_positions) if card_positions else "선택 카드 없음"
-        public_message = f"{target_name}의 {cards_label}: {type_label} = {value_label}"
+        cards_label = ", ".join(f"{pos}번 카드" for pos in card_positions) if card_positions else "선택한 카드 없음"
+        public_message = f"{target_name}에게 공유: {cards_label} / {type_label}: {value_label}"
         if message:
             public_message = f"{public_message} / 메모: {message}"
         log_payload["publicMessage"] = public_message
-        msg = f"Shared {info_type} info with {target_name}"
+        msg = public_message
         self._record_event("give_info", p_id, log_payload, True, msg)
         return True, msg
 
@@ -400,7 +425,7 @@ class GameEngine:
         return None
 
     def _check_game_over(self):
-        if all(zone["next"] > 5 for zone in self.zones.values()):
+        if all(zone["next"] > GameRules.COMPLETION_TARGET_NUMBER for zone in self.zones.values()):
             self.is_game_over = True
             self.game_over_reason = "All zones completed"
         elif self.error_count >= GameRules.MAX_ERRORS:
@@ -409,6 +434,9 @@ class GameEngine:
         elif any(p["hp"] <= 0 for p in self.players.values()):
             self.is_game_over = True
             self.game_over_reason = "A player has collapsed (HP 0)"
+        elif len(self.deck) == 0:
+            self.is_game_over = True
+            self.game_over_reason = "Deck exhausted"
         elif self.current_turn > GameRules.TOTAL_TURNS:
             self.is_game_over = True
             self.game_over_reason = "Final turn reached"
