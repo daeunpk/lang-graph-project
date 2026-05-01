@@ -3,6 +3,7 @@ import type { GamePhase } from "../../types/game";
 const PHASE_LABELS: Record<GamePhase, string> = {
   waiting: "대기 중",
   agent_reporting: "에이전트 보고 중",
+  agent_turn: "에이전트 턴",
   human_turn: "당신의 턴",
   resolving: "처리 중",
   turn_end: "턴 종료",
@@ -13,9 +14,15 @@ interface TurnIndicatorProps {
   currentTurn: number;
   totalTurns: number;
   phase: GamePhase;
+  actorName?: string;
 }
 
-export function TurnIndicator({ currentTurn, totalTurns, phase }: TurnIndicatorProps) {
+export function TurnIndicator({
+  currentTurn,
+  totalTurns,
+  phase,
+  actorName,
+}: TurnIndicatorProps) {
   return (
     <div className="turn-indicator">
       <div className="turn-number">
@@ -25,7 +32,10 @@ export function TurnIndicator({ currentTurn, totalTurns, phase }: TurnIndicatorP
           <span className="turn-total">/{totalTurns}</span>
         </span>
       </div>
-      <div className={`phase-badge phase-${phase}`}>{PHASE_LABELS[phase]}</div>
+      <div className="turn-phase-stack">
+        <div className={`phase-badge phase-${phase}`}>{PHASE_LABELS[phase]}</div>
+        {actorName && <span className="actor-badge">{actorName}</span>}
+      </div>
     </div>
   );
 }

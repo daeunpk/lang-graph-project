@@ -12,11 +12,11 @@ export function ScoreSummary() {
     <div className="score-summary">
       <div className="score-item">
         <span className="score-label">팀</span>
-        <span className="score-value team">{breakdown.teamScore}</span>
+        <span className="score-value team">{breakdown.teamScore}/25</span>
       </div>
       <div className="score-divider" />
       <div className="score-item">
-        <span className="score-label">개인</span>
+        <span className="score-label">성공</span>
         <span className="score-value">{breakdown.individualScore}</span>
       </div>
       {gameState.config.scoringMode === "coopetition" && (

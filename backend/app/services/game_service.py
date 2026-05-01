@@ -1,6 +1,6 @@
-from app.graph.factory import get_graph
 from app.db.session_store import game_sessions
 from app.engine.game_engine import GameEngine
+from app.engine.rules import GameRules
 from app.services.websocket_service import manager
 from app.utils.game_helpers import get_filtered_state
 import asyncio
@@ -11,22 +11,10 @@ class GameService:
     async def create_new_game(condition, human_name):
         engine = GameEngine(condition, human_name)
         game_sessions.save_game(engine.session_id, engine)
-        
-        # 그래프 초기 실행
-        graph = get_graph()
-        initial_state = {
-            "session_id": engine.session_id,
-            "condition": condition,
-            "current_turn": 1,
-            "reports": [],
-            "is_game_over": False
-        }
-        # 에이전트 보고 단계까지 진행 후 pause_for_human에서 멈춤
-        config = {"configurable": {"thread_id": engine.session_id}}
-        
+
         async def run_initial_graph():
-            await asyncio.sleep(1.5) # 소켓 연결을 위한 여유 시간
-            await graph.ainvoke(initial_state, config=config)
+            await asyncio.sleep(0.8)
+            await GameService._run_agent_round(engine.session_id)
             
         asyncio.create_task(run_initial_graph())
         
@@ -44,6 +32,7 @@ class GameService:
 
         if success:
             engine.current_phase = "agent_reporting"
+            engine.current_actor_id = "agent_1"
             engine.turn_started_at = datetime.now().isoformat()
 
         await manager.broadcast_to_session(session_id, {
@@ -100,13 +89,36 @@ class GameService:
             if engine.is_game_over:
                 break
 
+            engine.current_phase = "agent_turn"
+            engine.current_actor_id = agent_id
+            engine.turn_started_at = datetime.now().isoformat()
+
+            await manager.broadcast_to_session(session_id, {
+                "type": "game_state",
+                "payload": get_filtered_state(engine, engine.human_id)
+            })
+
             await manager.broadcast_to_session(session_id, {
                 "type": "generating_start",
                 "payload": {"agentId": agent_id}
             })
 
-            await asyncio.sleep(0.8)
             decision = engine.get_agent_decision(agent_id)
+            report = GameService._build_agent_report(engine, agent_id, decision)
+            engine._record_event("agent_report", agent_id, {
+                "reportId": report["reportId"],
+                "suggestedAction": report["suggestedAction"],
+                "confidence": report["confidence"],
+                "content": report["content"],
+                "uncertainties": report["uncertainties"],
+            }, True, "Agent report generated")
+            await manager.broadcast_to_session(session_id, {
+                "type": "agent_report",
+                "payload": report
+            })
+
+            await asyncio.sleep(GameRules.TURN_TIME_LIMIT)
+
             success, msg = engine.process_action(
                 agent_id,
                 decision["type"],
@@ -155,9 +167,50 @@ class GameService:
         if not engine.is_game_over:
             engine.current_turn += 1
             engine.current_phase = "human_turn"
+            engine.current_actor_id = engine.human_id
             engine.turn_started_at = datetime.now().isoformat()
 
         await manager.broadcast_to_session(session_id, {
             "type": "game_state",
             "payload": get_filtered_state(engine, engine.human_id)
         })
+
+    @staticmethod
+    def _build_agent_report(engine, agent_id, decision):
+        agent = engine.players[agent_id]
+        action_type = decision["type"]
+        payload = decision.get("payload", {})
+
+        action_label = {
+            "install": "카드 설치",
+            "give_info": "정보 제공",
+            "discard": "정보 갱신",
+            "rest": "휴식",
+        }.get(action_type, action_type)
+
+        reason = "현재 보드 순서, 손패, HP 상태를 기준으로 선택했습니다."
+        if action_type == "install":
+            reason = f"{payload.get('targetZone', '해당')} 구역의 다음 순서에 맞는 카드가 있다고 판단했습니다."
+        elif action_type == "give_info":
+            reason = "팀원이 볼 수 없는 카드 뒷면 정보를 보완하는 것이 더 중요하다고 판단했습니다."
+        elif action_type == "discard":
+            reason = "현재 손패에서 설치 우선도가 낮은 카드를 갱신하는 편이 낫다고 판단했습니다."
+        elif action_type == "rest":
+            reason = "HP를 회복해 다음 행동 여지를 확보해야 한다고 판단했습니다."
+
+        return {
+            "reportId": f"rep_{datetime.now().timestamp()}_{agent_id}",
+            "agentId": agent_id,
+            "agentName": agent["name"],
+            "role": agent.get("role", "flow_analyst"),
+            "turn": engine.current_turn,
+            "content": f"이번 턴 제안 행동: {action_label}\n{reason}",
+            "confidence": 0.72 if action_type in ["install", "give_info"] else 0.58,
+            "suggestedAction": action_type,
+            "uncertainties": [
+                "인간 플레이어가 기억한 힌트 상태",
+                "다른 팀원의 다음 행동 의도"
+            ],
+            "isFollowupResponse": False,
+            "timestamp": datetime.now().isoformat()
+        }

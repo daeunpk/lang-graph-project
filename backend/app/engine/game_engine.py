@@ -13,6 +13,7 @@ class GameEngine:
         self.current_turn = 1
         self.current_phase = "agent_reporting"
         self.turn_started_at = datetime.now().isoformat()
+        self.current_actor_id = "agent_1"
         self.is_game_over = False
         self.game_over_reason = ""
         
@@ -44,6 +45,8 @@ class GameEngine:
         }
         
         self.deck = self._generate_deck()
+        self.total_cards = len(self.deck)
+        self.discard_pile = []
         self.hands_dealt = False
         self.deal_initial_hands()
         self.logs = []
@@ -51,8 +54,11 @@ class GameEngine:
     def _generate_deck(self):
         deck = []
         for z in GameRules.ZONES:
-            for n in GameRules.NUMBERS:
-                truth = "misinformation" if random.random() < 0.2 else "genuine"
+            zone_cards = []
+            numbers = [1, 1, 1, 2, 2, 3, 3, 4, 4, 5]
+            misinformation_indexes = set(random.sample(range(len(numbers)), 2))
+            for index, n in enumerate(numbers):
+                truth = "misinformation" if index in misinformation_indexes else "genuine"
                 deck.append({
                     "cardId": str(uuid.uuid4()),
                     "number": n,
@@ -63,15 +69,36 @@ class GameEngine:
         random.shuffle(deck)
         return deck
 
+    def _draw_card(self):
+        if not self.deck:
+            return None
+        return self.deck.pop()
+
+    def _record_event(self, event_type, actor_id, payload=None, success=True, message=""):
+        self.logs.append({
+            "eventId": f"evt_{datetime.now().timestamp()}_{len(self.logs)}",
+            "sessionId": self.session_id,
+            "turn": self.current_turn,
+            "phase": self.current_phase,
+            "actorId": actor_id,
+            "eventType": event_type,
+            "success": success,
+            "message": message,
+            "payload": payload or {},
+            "timestamp": datetime.now().isoformat(),
+        })
+
     def deal_initial_hands(self):
         for p_id in self.players:
             self.players[p_id]["hand"] = []
             for _ in range(GameRules.HAND_SIZE):
-                if self.deck:
-                    self.players[p_id]["hand"].append(self.deck.pop())
+                drawn = self._draw_card()
+                if drawn:
+                    self.players[p_id]["hand"].append(drawn)
         self.hands_dealt = True
 
     def get_full_state(self):
+        self._sync_scores()
         return {
             "sessionId": self.session_id,
             "config": {
@@ -86,10 +113,16 @@ class GameEngine:
             "currentTurn": self.current_turn,
             "currentPhase": self.current_phase,
             "turnStartedAt": self.turn_started_at,
+            "currentActorId": self.current_actor_id,
             "board": {
                 "zones": [{"zoneId": k, "slots": v["slots"], "maxSlots": 5, "nextExpected": v["next"]} for k, v in self.zones.items()],
                 "errorCount": self.error_count,
                 "maxErrors": GameRules.MAX_ERRORS
+            },
+            "deck": {
+                "totalCards": self.total_cards,
+                "remainingCards": len(self.deck),
+                "discardedCards": len(self.discard_pile)
             },
             "players": [
                 {
@@ -105,6 +138,13 @@ class GameEngine:
             "isGameOver": self.is_game_over,
             "gameOverReason": self.game_over_reason
         }
+
+    def _calculate_fmif_score(self):
+        return sum(zone["next"] - 1 for zone in self.zones.values())
+
+    def _sync_scores(self):
+        self.team_score = self._calculate_fmif_score()
+        self.threshold_reached = self.team_score >= GameRules.THRESHOLD
 
     def process_action(self, p_id, action_type, payload):
         if self.is_game_over: return False, "Game is already over"
@@ -140,20 +180,29 @@ class GameEngine:
         if is_correct:
             zone["slots"][actual_slot] = {"cardId": card_id, "number": card["number"], "isCorrect": True}
             zone["next"] += 1
-            t_delta, p_delta = GameRules.calculate_score(True, self.scoring_mode, self.threshold_reached)
-            self.team_score += t_delta
-            player["score"] += p_delta
+            player["score"] += 1
             msg = "Installation successful"
         else:
             self.error_count += 1
-            t_delta, p_delta = GameRules.calculate_score(False, self.scoring_mode, self.threshold_reached)
-            self.team_score += t_delta
-            player["score"] += p_delta
             msg = "Installation failed (Error)"
             
         player["hand"].remove(card)
-        if self.deck: player["hand"].append(self.deck.pop())
-        if self.team_score >= GameRules.THRESHOLD: self.threshold_reached = True
+        self.discard_pile.append({**card, "discardReason": "installed", "installedBy": p_id, "success": is_correct})
+        drawn = self._draw_card()
+        if drawn:
+            player["hand"].append(drawn)
+        self._sync_scores()
+        self._record_event("install", p_id, {
+            "cardId": card_id,
+            "targetZone": zone_id,
+            "cardNumber": card["number"],
+            "actualZone": card["zone"],
+            "truth": card["truth"],
+            "teamScoreAfter": self.team_score,
+            "individualScoreAfter": player["score"],
+            "deckRemaining": len(self.deck),
+            "handSizeAfter": len(player["hand"]),
+        }, is_correct, msg)
         return True, msg
 
     def _handle_discard(self, p_id, card_id):
@@ -162,15 +211,29 @@ class GameEngine:
         if not card: return False, "Card not in hand"
         if player["hp"] >= GameRules.MAX_HP: return False, "HP is already full"
         player["hand"].remove(card)
-        if self.deck: player["hand"].append(self.deck.pop())
+        self.discard_pile.append({**card, "discardReason": "discarded", "discardedBy": p_id})
+        drawn = self._draw_card()
+        if drawn:
+            player["hand"].append(drawn)
         player["hp"] = min(GameRules.MAX_HP, player["hp"] + 1)
-        return True, "Card discarded and HP recovered"
+        msg = "Card discarded and HP recovered"
+        self._record_event("discard", p_id, {
+            "cardId": card_id,
+            "cardNumber": card["number"],
+            "zone": card["zone"],
+            "truth": card["truth"],
+            "deckRemaining": len(self.deck),
+            "handSizeAfter": len(player["hand"]),
+        }, True, msg)
+        return True, msg
 
     def _handle_rest(self, p_id):
         player = self.players[p_id]
         if player["hp"] >= GameRules.MAX_HP: return False, "HP is already full"
         player["hp"] = min(GameRules.MAX_HP, player["hp"] + 1)
-        return True, "Rested and recovered HP"
+        msg = "Rested and recovered HP"
+        self._record_event("rest", p_id, {"hpAfter": player["hp"]}, True, msg)
+        return True, msg
 
     def _handle_give_info(self, p_id, payload):
         player = self.players[p_id]
@@ -186,15 +249,13 @@ class GameEngine:
         info_value = payload.get("infoValue", "")
         message = payload.get("message", "")
 
-        self.logs.append({
-            "turn": self.current_turn,
-            "actorId": p_id,
-            "targetId": target_id,
-            "actionType": "give_info",
+        log_payload = {
             "infoType": info_type,
             "infoValue": info_value,
             "message": message,
-        })
+            "targetId": target_id,
+            "targetCardIds": payload.get("targetCardIds") or [],
+        }
         for card_id in payload.get("targetCardIds") or []:
             for card in self.players[target_id]["hand"]:
                 if card["cardId"] == card_id:
@@ -205,7 +266,9 @@ class GameEngine:
                         "givenBy": p_id,
                         "message": message,
                     })
-        return True, f"Shared {info_type} info with {target_name}"
+        msg = f"Shared {info_type} info with {target_name}"
+        self._record_event("give_info", p_id, log_payload, True, msg)
+        return True, msg
 
     def _check_game_over(self):
         if self.error_count >= GameRules.MAX_ERRORS:
@@ -222,21 +285,18 @@ class GameEngine:
         player = self.players.get(agent_id)
         if not player: return {"type": "rest", "payload": {}}
 
-        for card in player["hand"]:
-            for zone_id, zone in self.zones.items():
-                if card["number"] == zone["next"] and card["zone"] == zone_id:
-                    if card["truth"] == "genuine":
-                        return {"type": "install", "payload": {"cardId": card["cardId"], "targetZone": zone_id}}
-        
-        human = self.players.get(self.human_id)
-        if player["hp"] > 1 and human and human["hand"]:
-            for card in human["hand"]:
+        potential_targets = [pid for pid in self.players if pid != agent_id and self.players[pid]["hand"]]
+        target_id = random.choice(potential_targets) if potential_targets else self.human_id
+        target = self.players.get(target_id)
+
+        if player["hp"] > 0 and target and target["hand"] and random.random() < 0.45:
+            for card in target["hand"]:
                 zone = self.zones.get(card["zone"])
                 if zone and card["number"] == zone["next"] and card["truth"] == "genuine":
                     return {
                         "type": "give_info",
                         "payload": {
-                            "targetPlayerId": self.human_id,
+                            "targetPlayerId": target_id,
                             "targetCardIds": [card["cardId"]],
                             "infoType": "zone",
                             "infoValue": card["zone"],
@@ -244,11 +304,11 @@ class GameEngine:
                         }
                     }
 
-            card = human["hand"][0]
+            card = random.choice(target["hand"])
             return {
                 "type": "give_info",
                 "payload": {
-                    "targetPlayerId": self.human_id,
+                    "targetPlayerId": target_id,
                     "targetCardIds": [card["cardId"]],
                     "infoType": "truth",
                     "infoValue": card["truth"],
@@ -256,6 +316,64 @@ class GameEngine:
                 }
             }
 
-        if player["hp"] < 2: return {"type": "rest", "payload": {}}
-        if player["hand"]: return {"type": "discard", "payload": {"cardId": player["hand"][0]["cardId"]}}
+        for card in player["hand"]:
+            for zone_id, zone in self.zones.items():
+                if card["number"] == zone["next"] and card["zone"] == zone_id:
+                    if card["truth"] == "genuine" and random.random() < 0.6:
+                        return {"type": "install", "payload": {"cardId": card["cardId"], "targetZone": zone_id}}
+
+        if player["hand"] and random.random() < 0.2:
+            card = random.choice(player["hand"])
+            target_zone = random.choice(GameRules.ZONES)
+            return {"type": "install", "payload": {"cardId": card["cardId"], "targetZone": target_zone}}
+
+        if player["hp"] > 1 and target and target["hand"]:
+            for card in target["hand"]:
+                zone = self.zones.get(card["zone"])
+                if zone and card["number"] == zone["next"] and card["truth"] == "genuine":
+                    return {
+                        "type": "give_info",
+                        "payload": {
+                            "targetPlayerId": target_id,
+                            "targetCardIds": [card["cardId"]],
+                            "infoType": "zone",
+                            "infoValue": card["zone"],
+                            "message": f"{card['zone']} 구역 정보가 중요합니다."
+                        }
+                    }
+
+            card = target["hand"][0]
+            return {
+                "type": "give_info",
+                "payload": {
+                    "targetPlayerId": target_id,
+                    "targetCardIds": [card["cardId"]],
+                    "infoType": "truth",
+                    "infoValue": card["truth"],
+                    "message": "이 카드의 진위를 확인했습니다."
+                }
+            }
+
+        if player["hp"] < 2:
+            return {"type": "rest", "payload": {}}
+
+        if player["hp"] < GameRules.MAX_HP and player["hand"]:
+            discard_card = next(
+                (c for c in player["hand"] if c["truth"] == "misinformation"),
+                player["hand"][0]
+            )
+            return {"type": "discard", "payload": {"cardId": discard_card["cardId"]}}
+
+        if player["hand"]:
+            card = random.choice(player["hand"])
+            return {
+                "type": "give_info",
+                "payload": {
+                    "targetPlayerId": target_id,
+                    "targetCardIds": [target["hand"][0]["cardId"]] if target and target["hand"] else [],
+                    "infoType": "truth",
+                    "infoValue": card["truth"],
+                    "message": "이번 턴은 설치보다 정보 정리가 우선입니다."
+                }
+            }
         return {"type": "rest", "payload": {}}

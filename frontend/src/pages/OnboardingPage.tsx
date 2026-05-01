@@ -7,38 +7,38 @@ import "../styles/global.css";
 const CONDITIONS: { value: GameCondition; scoreLabel: string; rewardLabel: string; interactionLabel: string }[] = [
   {
     value: "leader_cooperative",
-    scoreLabel: "모든 플레이어가 팀 점수를 공유합니다.",
+    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
     rewardLabel: "팀 전체가 성공할 때 보상이 주어집니다.",
     interactionLabel: "당신은 리더입니다. 에이전트들이 개별 보고하며, 당신이 지시를 내립니다.",
   },
   {
     value: "leader_competitive",
-    scoreLabel: "각 플레이어는 개인 점수를 따로 관리합니다.",
-    rewardLabel: "가장 높은 개인 점수를 가진 플레이어가 우선 보상을 받습니다.",
+    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    rewardLabel: "개인 성공 설치 수 순위에 따라 보상이 달라집니다.",
     interactionLabel: "당신은 리더입니다. 에이전트들이 보고하지만, 각자의 이익을 고려합니다.",
   },
   {
     value: "leader_coopetition",
-    scoreLabel: "팀 기준선 달성 전에는 팀 점수가 중심입니다. 달성 후에는 개인 점수 보너스가 활성화됩니다.",
-    rewardLabel: "팀 기준선 달성 후 개인 보상이 추가로 적용됩니다.",
+    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    rewardLabel: "팀 기준선 달성 시에만 개인 성공 설치 수 순위 보상이 적용됩니다.",
     interactionLabel: "당신은 리더입니다. 에이전트들이 보고하며, 상황에 따라 협력과 경쟁이 혼재합니다.",
   },
   {
     value: "no_leader_cooperative",
-    scoreLabel: "모든 플레이어가 팀 점수를 공유합니다.",
+    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
     rewardLabel: "팀 전체가 성공할 때 보상이 주어집니다.",
     interactionLabel: "리더 없이 자유롭게 소통합니다. 모두가 동등하게 참여합니다.",
   },
   {
     value: "no_leader_competitive",
-    scoreLabel: "각 플레이어는 개인 점수를 따로 관리합니다.",
-    rewardLabel: "가장 높은 개인 점수를 가진 플레이어가 우선 보상을 받습니다.",
+    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    rewardLabel: "개인 성공 설치 수 순위에 따라 보상이 달라집니다.",
     interactionLabel: "리더 없이 자유 소통합니다. 에이전트들도 개별 이익을 고려할 수 있습니다.",
   },
   {
     value: "no_leader_coopetition",
-    scoreLabel: "팀 기준선 달성 전에는 팀 점수가 중심입니다. 달성 후에는 개인 점수 보너스가 활성화됩니다.",
-    rewardLabel: "팀 기준선 달성 후 개인 보상이 추가로 적용됩니다.",
+    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    rewardLabel: "팀 기준선 달성 시에만 개인 성공 설치 수 순위 보상이 적용됩니다.",
     interactionLabel: "리더 없이 자유 소통합니다. 상황에 따라 협력과 경쟁이 혼재합니다.",
   },
 ];

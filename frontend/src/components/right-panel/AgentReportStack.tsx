@@ -7,7 +7,11 @@ interface AgentReportStackProps {
 }
 
 export function AgentReportStack({ sessionId }: AgentReportStackProps) {
-  const { reports, agents, isGenerating } = useAgentStore();
+  const { reports, agents, messages, isGenerating } = useAgentStore();
+  const recentInfoMessages = messages
+    .filter((m) => m.messageType === "free_chat" || m.messageType === "broadcast_ack")
+    .slice(-12)
+    .reverse();
 
   return (
     <div className="agent-report-stack">
@@ -17,6 +21,23 @@ export function AgentReportStack({ sessionId }: AgentReportStackProps) {
           <div className="generating-indicator">
             <span>분석 중...</span>
           </div>
+        )}
+      </div>
+
+      <div className="info-feed">
+        <div className="info-feed-title">공유된 정보</div>
+        {recentInfoMessages.length === 0 ? (
+          <p className="info-feed-empty">아직 공유된 정보가 없습니다.</p>
+        ) : (
+          recentInfoMessages.map((message) => (
+            <div key={message.messageId} className="info-feed-item">
+              <div className="info-feed-meta">
+                <span>{message.agentName}</span>
+                <span>Turn {message.turn}</span>
+              </div>
+              <p>{message.content}</p>
+            </div>
+          ))
         )}
       </div>
 

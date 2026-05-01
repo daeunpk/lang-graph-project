@@ -15,6 +15,7 @@ async def start_turn_node(state):
         engine.deal_initial_hands()
 
     engine.current_phase = "agent_reporting"
+    engine.current_actor_id = "agent_1"
     engine.turn_started_at = datetime.now().isoformat()
 
     # 2. 인간 플레이어용 필터링 데이터 생성

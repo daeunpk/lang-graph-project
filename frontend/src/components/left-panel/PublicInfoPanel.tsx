@@ -5,12 +5,19 @@ export function PublicInfoPanel() {
   const { gameState } = useGameStore();
   if (!gameState) return null;
 
-  const { board, players } = gameState;
+  const { board, players, deck } = gameState;
 
   return (
     <div className="public-info-panel">
       <div className="info-section">
         <h3 className="info-section-title">보드 현황</h3>
+        {deck && (
+          <div className="deck-status-row">
+            <span>전체 {deck.totalCards}장</span>
+            <span>더미 {deck.remainingCards}장</span>
+            <span>버림 {deck.discardedCards}장</span>
+          </div>
+        )}
         {board.zones.map((zone) => (
           <div key={zone.zoneId} className="zone-status-row">
             <div
@@ -51,7 +58,7 @@ export function PublicInfoPanel() {
                 }}
               />
             </div>
-            <span className="player-hp-text">{p.hp}</span>
+            <span className="player-hp-text">HP {p.hp}</span>
           </div>
         ))}
       </div>

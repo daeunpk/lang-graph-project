@@ -21,7 +21,7 @@ export function ActionToolbar({ sessionId }: ActionToolbarProps) {
 
   const handleInstall = () => {
     if (!selectedCardId || !perms.canInstall) return;
-    openModal("action", { type: "install_prompt" });
+    showNotification("보드에서 삼각형이 표시된 슬롯을 클릭하세요.", "info");
   };
 
   const handleGiveInfo = () => {

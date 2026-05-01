@@ -8,6 +8,17 @@ interface ResultData {
   errorCount: number;
   successfulInstalls: number;
   gameOverReason: string;
+  scoringMode: "cooperative" | "competitive" | "coopetition";
+  rewardRule: string;
+  teamScoreThreshold: number;
+  thresholdReached: boolean;
+  leaderboard: Array<{
+    playerId: string;
+    name: string;
+    isHuman: boolean;
+    successfulInstalls: number;
+    rewardEligible: boolean;
+  }>;
   winner?: string;
 }
 
@@ -39,11 +50,11 @@ export default function ResultPage() {
         {result ? (
           <div className="result-stats">
             <div className="stat-row">
-              <span className="stat-label">팀 점수</span>
-              <span className="stat-value team">{result.teamScore}</span>
+              <span className="stat-label">팀 완성도 점수</span>
+              <span className="stat-value team">{result.teamScore}/25</span>
             </div>
             <div className="stat-row">
-              <span className="stat-label">개인 점수</span>
+              <span className="stat-label">내 성공 설치 수</span>
               <span className="stat-value">{result.individualScore}</span>
             </div>
             <div className="stat-row">
@@ -57,6 +68,38 @@ export default function ResultPage() {
             <div className="stat-row">
               <span className="stat-label">오류 횟수</span>
               <span className="stat-value error">{result.errorCount}</span>
+            </div>
+            <div className="reward-rule-box">
+              <span className="reward-rule-label">보상 기준</span>
+              <p>{result.rewardRule}</p>
+              {result.scoringMode === "coopetition" && (
+                <p>
+                  기준선 {result.teamScoreThreshold}점:
+                  {result.thresholdReached ? " 달성" : " 미달성"}
+                </p>
+              )}
+            </div>
+            <div className="leaderboard-box">
+              <div className="leaderboard-title">리더보드</div>
+              {result.leaderboard.map((entry, index) => (
+                <div key={entry.playerId} className="leaderboard-row">
+                  <span className="leaderboard-rank">{index + 1}</span>
+                  <span className="leaderboard-name">
+                    {entry.name}
+                    {entry.isHuman ? " (나)" : ""}
+                  </span>
+                  <span className="leaderboard-score">
+                    성공 {entry.successfulInstalls}
+                  </span>
+                  <span
+                    className={`leaderboard-eligible ${
+                      entry.rewardEligible ? "eligible" : "ineligible"
+                    }`}
+                  >
+                    {entry.rewardEligible ? "보상 대상" : "비활성"}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         ) : (

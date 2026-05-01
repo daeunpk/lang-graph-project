@@ -38,16 +38,16 @@ export function GameEndModal({ sessionId }: GameEndModalProps) {
         {breakdown && (
           <div className="game-end-scores">
             <div className="end-score-row">
-              <span>팀 점수</span>
-              <span className="score-val">{breakdown.teamScore}</span>
+              <span>팀 완성도 점수</span>
+              <span className="score-val">{breakdown.teamScore}/25</span>
             </div>
             <div className="end-score-row">
-              <span>개인 점수</span>
+              <span>내 성공 설치 수</span>
               <span className="score-val">{breakdown.individualScore}</span>
             </div>
             <div className="end-score-row total">
-              <span>총점</span>
-              <span className="score-val">{breakdown.totalDisplayScore}</span>
+              <span>보상 기준</span>
+              <span className="score-val">{breakdown.explanation}</span>
             </div>
           </div>
         )}

@@ -72,6 +72,12 @@ export function useGameSocket(sessionId: string | null) {
       switch (msg.type) {
         case "game_state":
           setGameState(msg.payload);
+          if (msg.payload.isGameOver) {
+            openModal("game_end", {
+              reason: msg.payload.gameOverReason ?? "게임 종료",
+              winner: msg.payload.winner,
+            });
+          }
           break;
         case "hand_update":
           setMyHand(msg.payload);

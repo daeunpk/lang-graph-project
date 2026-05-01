@@ -19,7 +19,7 @@ export function computeScoreBreakdown(
   const player = state.players.find((p) => p.playerId === playerId);
   const individualScore = player?.individualScore ?? 0;
 
-  let totalDisplayScore = 0;
+  let totalDisplayScore = teamScore;
   let thresholdStatus: ScoreBreakdown["thresholdStatus"] = "not_reached";
   let bonusMultiplier = 1;
   let explanation = "";
@@ -31,22 +31,19 @@ export function computeScoreBreakdown(
   switch (mode) {
     case "cooperative":
       totalDisplayScore = teamScore;
-      explanation = "팀 점수 기반";
+      explanation = "보상 기준: 팀 점수";
       break;
     case "competitive":
-      totalDisplayScore = individualScore;
-      explanation = "개인 점수 기반";
+      totalDisplayScore = teamScore;
+      explanation = "게임 점수는 팀 점수, 보상 기준은 개인 성공 설치 수";
       break;
     case "coopetition":
       if (state.thresholdReached) {
-        bonusMultiplier = 1.5;
-        totalDisplayScore = Math.floor(
-          teamScore * 0.5 + individualScore * bonusMultiplier
-        );
-        explanation = "기준선 달성 후: 개인 보너스 활성화";
+        totalDisplayScore = teamScore;
+        explanation = "기준선 달성: 개인 성공 설치 수 순위 보상 적용";
       } else {
         totalDisplayScore = teamScore;
-        explanation = "기준선 도달 전: 팀 점수 중심";
+        explanation = "기준선 미달: 개인 순위 보상 비활성";
       }
       break;
   }

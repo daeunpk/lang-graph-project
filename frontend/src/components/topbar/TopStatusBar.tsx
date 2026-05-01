@@ -9,6 +9,7 @@ export function TopStatusBar() {
 
   const { board, players } = gameState;
   const human = players.find((p) => p.isHuman);
+  const actor = players.find((p) => p.playerId === gameState.currentActorId);
   const errorSeverity =
     board.errorCount / board.maxErrors < 0.4
       ? "safe"
@@ -22,6 +23,7 @@ export function TopStatusBar() {
         currentTurn={gameState.currentTurn}
         totalTurns={gameState.config.totalTurns}
         phase={gameState.currentPhase}
+        actorName={actor?.isHuman ? "나" : actor?.name}
       />
 
       <div className="top-center-cluster">

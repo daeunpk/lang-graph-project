@@ -40,6 +40,12 @@ export interface BoardState {
   maxErrors: number;
 }
 
+export interface DeckState {
+  totalCards: number;
+  remainingCards: number;
+  discardedCards: number;
+}
+
 // [수정] PlayerState에 hand 속성 추가
 export interface PlayerState {
   playerId: string;
@@ -73,7 +79,9 @@ export interface GameState {
   config: GameConfig;
   currentTurn: number;
   currentPhase: GamePhase;
+  currentActorId?: string;
   board: BoardState;
+  deck?: DeckState;
   players: PlayerState[];
   teamScore: number;
   teamScoreThreshold: number;
@@ -87,6 +95,7 @@ export interface GameState {
 export type GamePhase =
   | "waiting"
   | "agent_reporting"
+  | "agent_turn"
   | "human_turn" // 에이전트 행동이 끝난 후 이 페이즈로 전환됨
   | "resolving"
   | "turn_end"

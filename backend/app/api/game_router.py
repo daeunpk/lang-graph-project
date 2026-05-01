@@ -28,11 +28,47 @@ async def get_result(session_id: str):
     engine = game_sessions.get_game(session_id)
     if not engine: raise HTTPException(status_code=404, detail="Session not found")
     state = engine.get_full_state()
+    players = state["players"]
+    scoring_mode = state["config"]["scoringMode"]
+    reward_rule = {
+        "cooperative": "팀 점수 기준으로 모든 참가자에게 동일 보상",
+        "competitive": "게임 점수는 동일하게 계산하되, 개인 성공 설치 수 순위로 보상",
+        "coopetition": "팀 기준선 달성 시에만 개인 성공 설치 수 순위 보상 적용",
+    }.get(scoring_mode, "팀 점수 기준")
+    leaderboard = sorted(
+        [
+            {
+                "playerId": p["playerId"],
+                "name": p["name"],
+                "isHuman": p["isHuman"],
+                "successfulInstalls": p["individualScore"],
+                "rewardEligible": scoring_mode != "coopetition" or state["thresholdReached"],
+            }
+            for p in players
+        ],
+        key=lambda p: p["successfulInstalls"],
+        reverse=True,
+    )
     return {
         "teamScore": state["teamScore"],
         "individualScore": next(p["individualScore"] for p in state["players"] if p["isHuman"]),
         "totalTurns": state["currentTurn"],
         "errorCount": state["board"]["errorCount"],
         "successfulInstalls": sum(sum(1 for s in z["slots"] if s) for z in state["board"]["zones"]),
-        "gameOverReason": state["gameOverReason"]
+        "gameOverReason": state["gameOverReason"],
+        "scoringMode": scoring_mode,
+        "rewardRule": reward_rule,
+        "teamScoreThreshold": state["teamScoreThreshold"],
+        "thresholdReached": state["thresholdReached"],
+        "leaderboard": leaderboard,
+    }
+
+@router.get("/{session_id}/logs")
+async def get_logs(session_id: str):
+    engine = game_sessions.get_game(session_id)
+    if not engine: raise HTTPException(status_code=404, detail="Session not found")
+    return {
+        "sessionId": session_id,
+        "events": engine.logs,
+        "count": len(engine.logs),
     }

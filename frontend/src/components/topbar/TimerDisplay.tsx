@@ -8,6 +8,9 @@ export function TimerDisplay() {
   const sessionId = gameState?.sessionId ?? "";
   const playerId = localStorage.getItem("playerId") ?? "";
   const isHumanTurn = gameState?.currentPhase === "human_turn";
+  const currentActor = gameState?.players.find(
+    (p) => p.playerId === gameState.currentActorId
+  );
   const timeLimit = gameState?.config.turnTimeLimit ?? 20;
   const startedAt = gameState?.turnStartedAt;
   const timeoutKey = `${gameState?.currentTurn ?? 0}-${gameState?.currentPhase ?? "none"}-${startedAt ?? ""}`;
@@ -45,7 +48,9 @@ export function TimerDisplay() {
     <div className={`timer-display urgency-${urgency}`}>
       <div className="timer-meta">
         <span className="timer-label">
-          {isHumanTurn ? "내 행동 시간" : "진행 시간"}
+          {isHumanTurn
+            ? "내 행동 시간"
+            : `${currentActor?.name ?? "에이전트"} 턴`}
         </span>
         <span className="timer-value">{formatTime(secondsLeft)}</span>
       </div>
