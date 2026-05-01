@@ -39,7 +39,7 @@ export function TimerDisplay() {
     if (timeoutRef.current === timeoutKey) return;
 
     timeoutRef.current = timeoutKey;
-    void sendAction(sessionId, playerId, "rest", {});
+    void sendAction(sessionId, playerId, "timeout", {});
   }, [isHumanTurn, playerId, secondsLeft, sessionId, timeoutKey]);
 
   if (!gameState) return null;

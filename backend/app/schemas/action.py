@@ -3,7 +3,7 @@ from typing import Optional, List, Union, Dict
 
 class GameActionRequest(BaseModel):
     playerId: str
-    actionType: str # install, discard, rest, broadcast, followup
+    actionType: str # install, discard, rest, timeout, broadcast, followup
     cardId: Optional[str] = None
     targetZone: Optional[str] = None
     targetSlot: Optional[int] = None

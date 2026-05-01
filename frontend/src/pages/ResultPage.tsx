@@ -26,14 +26,19 @@ export default function ResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [result, setResult] = useState<ResultData | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   useEffect(() => {
     if (!sessionId) return;
+    setError(null);
     fetch(`${API_BASE}/api/game/${sessionId}/result`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`결과를 불러올 수 없습니다. (${r.status})`);
+        return r.json();
+      })
       .then(setResult)
-      .catch(() => {});
+      .catch((e) => setError(e instanceof Error ? e.message : "결과를 불러올 수 없습니다."));
   }, [sessionId, API_BASE]);
 
   return (
@@ -47,7 +52,9 @@ export default function ResultPage() {
           )}
         </div>
 
-        {result ? (
+        {error ? (
+          <div className="result-loading">{error}</div>
+        ) : result ? (
           <div className="result-stats">
             <div className="stat-row">
               <span className="stat-label">팀 완성도 점수</span>
@@ -81,7 +88,7 @@ export default function ResultPage() {
             </div>
             <div className="leaderboard-box">
               <div className="leaderboard-title">리더보드</div>
-              {result.leaderboard.map((entry, index) => (
+              {(result.leaderboard ?? []).map((entry, index) => (
                 <div key={entry.playerId} className="leaderboard-row">
                   <span className="leaderboard-rank">{index + 1}</span>
                   <span className="leaderboard-name">

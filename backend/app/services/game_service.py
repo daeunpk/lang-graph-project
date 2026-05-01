@@ -56,13 +56,15 @@ class GameService:
         if action_type in ["give_info", "broadcast"] and success:
             target_id = payload.get("targetPlayerId") or payload.get("targetAgentId") or p_id
             target = engine.players.get(target_id, {"name": "팀"})
+            latest_event = engine.logs[-1] if engine.logs else {}
+            public_message = latest_event.get("payload", {}).get("publicMessage")
             await manager.broadcast_to_session(session_id, {
                 "type": "agent_message",
                 "payload": {
                     "messageId": f"msg_{datetime.now().timestamp()}",
                     "agentId": p_id,
                     "agentName": engine.players[p_id]["name"],
-                    "content": payload.get("message") or f"{target['name']}에게 정보를 전달했습니다.",
+                    "content": public_message or payload.get("message") or f"{target['name']}에게 정보를 전달했습니다.",
                     "messageType": "free_chat",
                     "turn": engine.current_turn,
                     "timestamp": datetime.now().isoformat()
@@ -146,13 +148,15 @@ class GameService:
             })
 
             if success and decision["type"] == "give_info":
+                latest_event = engine.logs[-1] if engine.logs else {}
+                public_message = latest_event.get("payload", {}).get("publicMessage")
                 await manager.broadcast_to_session(session_id, {
                     "type": "agent_message",
                     "payload": {
                         "messageId": f"msg_{datetime.now().timestamp()}",
                         "agentId": agent_id,
                         "agentName": engine.players[agent_id]["name"],
-                        "content": decision["payload"].get("message", "정보를 공유했습니다."),
+                        "content": public_message or decision["payload"].get("message", "정보를 공유했습니다."),
                         "messageType": "free_chat",
                         "turn": engine.current_turn,
                         "timestamp": datetime.now().isoformat()
@@ -189,6 +193,7 @@ class GameService:
         }.get(action_type, action_type)
 
         reason = "현재 보드 순서, 손패, HP 상태를 기준으로 선택했습니다."
+        directive = engine._latest_leader_directive_for(agent_id)
         if action_type == "install":
             reason = f"{payload.get('targetZone', '해당')} 구역의 다음 순서에 맞는 카드가 있다고 판단했습니다."
         elif action_type == "give_info":
@@ -198,19 +203,40 @@ class GameService:
         elif action_type == "rest":
             reason = "HP를 회복해 다음 행동 여지를 확보해야 한다고 판단했습니다."
 
+        if directive:
+            reason = f"리더 지시('{directive['message']}')를 고려했습니다. {reason}"
+
         return {
             "reportId": f"rep_{datetime.now().timestamp()}_{agent_id}",
             "agentId": agent_id,
             "agentName": agent["name"],
             "role": agent.get("role", "flow_analyst"),
             "turn": engine.current_turn,
-            "content": f"이번 턴 제안 행동: {action_label}\n{reason}",
+            "content": (
+                f"이번 턴 제안 행동: {action_label}\n"
+                f"{reason}\n"
+                f"내 기억: {GameService._format_memory(engine, agent_id)}"
+            ),
             "confidence": 0.72 if action_type in ["install", "give_info"] else 0.58,
             "suggestedAction": action_type,
             "uncertainties": [
                 "인간 플레이어가 기억한 힌트 상태",
-                "다른 팀원의 다음 행동 의도"
+                "다른 팀원의 다음 행동 의도",
+                "리더 지시와 내 손패 기억의 불일치 가능성" if directive else "리더 지시 없음",
             ],
             "isFollowupResponse": False,
             "timestamp": datetime.now().isoformat()
         }
+
+    @staticmethod
+    def _format_memory(engine, agent_id):
+        memories = engine._agent_memory_summary(agent_id)
+        if not memories:
+            return "손패 없음"
+
+        chunks = []
+        for item in memories:
+            zone = item["knownZone"] or "색 미확인"
+            truth = item["knownTruth"] or "진위 미확인"
+            chunks.append(f"{item['position']}번({item['number']}): {zone}, {truth}")
+        return " / ".join(chunks)

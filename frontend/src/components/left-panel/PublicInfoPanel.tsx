@@ -15,6 +15,8 @@ export function PublicInfoPanel() {
           <div className="deck-status-row">
             <span>전체 {deck.totalCards}장</span>
             <span>더미 {deck.remainingCards}장</span>
+            <span>손패 {deck.inHandCards ?? 0}장</span>
+            <span>보드 {deck.installedCards ?? 0}장</span>
             <span>버림 {deck.discardedCards}장</span>
           </div>
         )}
@@ -73,6 +75,7 @@ export function PublicInfoPanel() {
               <div className="opponent-card-backs">
                 {p.hand.map((card) => {
                   const color = getZoneColor(String(card.zone));
+                  const latestHint = card.hintHistory?.at(-1);
                   const truthLabel =
                     card.truth === "genuine"
                       ? "T"
@@ -93,6 +96,11 @@ export function PublicInfoPanel() {
                       <span className={`opponent-card-truth ${card.truth}`}>
                         {truthLabel}
                       </span>
+                      {latestHint && (
+                        <span className="opponent-card-hint">
+                          {latestHint.hintType === "zone" ? "색" : "진"}
+                        </span>
+                      )}
                     </div>
                   );
                 })}

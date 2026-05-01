@@ -142,6 +142,11 @@
 .opponent-card-truth { font-family: var(--font-display); font-size: 0.75rem; font-weight: 800; }
 .opponent-card-truth.genuine { color: var(--accent-success); }
 .opponent-card-truth.misinformation { color: var(--accent-error); }
+.opponent-card-hint {
+  position: absolute; top: 2px; right: 2px; font-size: 0.5rem;
+  color: var(--bg-primary); background: var(--accent-primary);
+  border-radius: 2px; padding: 0 0.15rem; font-family: var(--font-mono);
+}
 
 .player-memo-card { padding: 0.8rem; height: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
 .memo-title { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
@@ -302,7 +307,7 @@
 .hand-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
 .hand-title { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
 .hand-count { font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-mono); }
-.hand-cards { display: flex; gap: 0.6rem; flex: 1; overflow-x: auto; padding-bottom: 0.3rem; }
+.hand-cards { display: flex; gap: 0.6rem; flex: 1; overflow-x: hidden; padding-bottom: 0.3rem; }
 .hand-cards.inactive { opacity: 0.6; pointer-events: none; }
 .hand-empty { font-size: 0.75rem; color: var(--text-muted); }
 .hand-inactive-overlay {

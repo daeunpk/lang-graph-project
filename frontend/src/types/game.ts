@@ -44,6 +44,8 @@ export interface DeckState {
   totalCards: number;
   remainingCards: number;
   discardedCards: number;
+  inHandCards?: number;
+  installedCards?: number;
 }
 
 // [수정] PlayerState에 hand 속성 추가

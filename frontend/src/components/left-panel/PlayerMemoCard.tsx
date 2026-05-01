@@ -1,13 +1,20 @@
 import { useState, useEffect } from "react";
+import { useGameStore } from "../../store/gameStore";
 
 export function PlayerMemoCard() {
+  const sessionId = useGameStore((s) => s.gameState?.sessionId ?? "no-session");
+  const storageKey = `playerMemo:${sessionId}`;
   const [memo, setMemo] = useState(() => {
-    return localStorage.getItem("playerMemo") ?? "";
+    return localStorage.getItem(storageKey) ?? "";
   });
 
   useEffect(() => {
-    localStorage.setItem("playerMemo", memo);
-  }, [memo]);
+    setMemo(localStorage.getItem(storageKey) ?? "");
+  }, [storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, memo);
+  }, [memo, storageKey]);
 
   return (
     <div className="player-memo-card">

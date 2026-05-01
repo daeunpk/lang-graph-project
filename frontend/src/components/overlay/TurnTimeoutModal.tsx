@@ -13,7 +13,7 @@ export function TurnTimeoutModal({ sessionId }: TurnTimeoutModalProps) {
   const playerId = localStorage.getItem("playerId") ?? "";
 
   const handleRest = async () => {
-    await sendAction(sessionId, playerId, "rest", {});
+    await sendAction(sessionId, playerId, "timeout", {});
     closeModal();
   };
 
@@ -28,12 +28,12 @@ export function TurnTimeoutModal({ sessionId }: TurnTimeoutModalProps) {
         <div className="timeout-icon">⏱</div>
         <h2 className="modal-title">시간 초과</h2>
         <p className="modal-desc">
-          턴 제한 시간이 초과되었습니다. 자동으로 휴식이 진행되거나, 지금 행동을 선택할 수 있습니다.
+          턴 제한 시간이 초과되었습니다. HP 회복 없이 이번 턴을 넘깁니다.
         </p>
 
         <div className="modal-actions">
           <button className="modal-btn rest" onClick={handleRest}>
-            휴식 선택
+            턴 넘기기
           </button>
           <button className="modal-btn confirm" onClick={handleInstall}>
             계속 행동
