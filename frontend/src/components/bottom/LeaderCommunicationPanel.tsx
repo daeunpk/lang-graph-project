@@ -83,7 +83,11 @@ export function LeaderCommunicationPanel({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="메시지 입력..."
+          placeholder={
+            isFreeMode
+              ? "예: 지금은 색 정보보다 진위 확인이 필요해 보여."
+              : "예: 이번 턴은 신중하게 정보부터 확인해줘."
+          }
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <button

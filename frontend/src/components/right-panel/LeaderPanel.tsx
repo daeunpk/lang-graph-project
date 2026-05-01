@@ -51,7 +51,7 @@ export function LeaderPanel({ sessionId }: LeaderPanelProps) {
             className="broadcast-textarea"
             value={broadcastMsg}
             onChange={(e) => setBroadcastMsg(e.target.value)}
-            placeholder="전체 에이전트에게 지시 내용을 입력하세요..."
+            placeholder={"예: 이번 턴은 신중하게 진위 정보부터 확인해줘.\n예: 파란/빨간 구역 설치 가능한 카드가 있으면 속도전으로 진행해줘.\n예: HP가 낮으니 휴식과 정보 갱신을 우선해줘."}
             rows={3}
           />
           <div className="broadcast-actions">

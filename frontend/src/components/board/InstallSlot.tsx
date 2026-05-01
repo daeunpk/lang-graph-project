@@ -34,6 +34,7 @@ export function InstallSlot({
   };
 
   const zoneColor = getZoneColor(zoneId);
+  const fireworkCount = card ? Math.max(1, Math.min(card.number, 5)) : 0;
 
   return (
     <div
@@ -47,6 +48,15 @@ export function InstallSlot({
 
       {card ? (
         <div className="slot-card">
+          <div className="slot-firework" aria-hidden="true">
+            {Array.from({ length: fireworkCount }, (_, index) => (
+              <span
+                key={index}
+                className="slot-bloom"
+                style={{ "--bloom-index": index } as CSSProperties}
+              />
+            ))}
+          </div>
           <span className="slot-card-number">{card.number}</span>
           {!card.isCorrect && <span className="slot-error-mark">✗</span>}
         </div>

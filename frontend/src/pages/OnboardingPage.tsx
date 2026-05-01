@@ -4,40 +4,42 @@ import { createSession } from "../utils/sendAction";
 import type { GameCondition } from "../types/game";
 import "../styles/global.css";
 
+const SCORE_LABEL = "게임 점수는 팀 완성도(0~25점)로 계산되며, 20점(각 구역 4번까지)을 기본 완성 목표로 봅니다.";
+
 const CONDITIONS: { value: GameCondition; scoreLabel: string; rewardLabel: string; interactionLabel: string }[] = [
   {
     value: "leader_cooperative",
-    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    scoreLabel: SCORE_LABEL,
     rewardLabel: "팀 전체가 성공할 때 보상이 주어집니다.",
     interactionLabel: "당신은 리더입니다. 에이전트들이 개별 보고하며, 당신이 지시를 내립니다.",
   },
   {
     value: "leader_competitive",
-    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    scoreLabel: SCORE_LABEL,
     rewardLabel: "개인 성공 설치 수 순위에 따라 보상이 달라집니다.",
     interactionLabel: "당신은 리더입니다. 에이전트들이 보고하지만, 각자의 이익을 고려합니다.",
   },
   {
     value: "leader_coopetition",
-    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    scoreLabel: SCORE_LABEL,
     rewardLabel: "팀 기준선 달성 시에만 개인 성공 설치 수 순위 보상이 적용됩니다.",
     interactionLabel: "당신은 리더입니다. 에이전트들이 보고하며, 상황에 따라 협력과 경쟁이 혼재합니다.",
   },
   {
     value: "no_leader_cooperative",
-    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    scoreLabel: SCORE_LABEL,
     rewardLabel: "팀 전체가 성공할 때 보상이 주어집니다.",
     interactionLabel: "리더 없이 자유롭게 소통합니다. 모두가 동등하게 참여합니다.",
   },
   {
     value: "no_leader_competitive",
-    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    scoreLabel: SCORE_LABEL,
     rewardLabel: "개인 성공 설치 수 순위에 따라 보상이 달라집니다.",
     interactionLabel: "리더 없이 자유 소통합니다. 에이전트들도 개별 이익을 고려할 수 있습니다.",
   },
   {
     value: "no_leader_coopetition",
-    scoreLabel: "게임 점수는 모든 조건에서 동일하게 팀 완성도(0~25점)로 계산됩니다.",
+    scoreLabel: SCORE_LABEL,
     rewardLabel: "팀 기준선 달성 시에만 개인 성공 설치 수 순위 보상이 적용됩니다.",
     interactionLabel: "리더 없이 자유 소통합니다. 상황에 따라 협력과 경쟁이 혼재합니다.",
   },

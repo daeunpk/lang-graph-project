@@ -21,6 +21,12 @@ class GameEngine:
         self.error_count = 0
         self.threshold_reached = False
         self.leader_directives = []
+        self.team_flow = {
+            "mode": "balanced",
+            "label": "균형",
+            "description": "리더 지시 없음: 에이전트가 보드, 손패 기억, HP를 균형 있게 고려합니다.",
+            "source": "",
+        }
         
         # 보드 구역 초기화 (1번부터 시작)
         self.zones = {z: {"slots": [None]*5, "next": 1} for z in GameRules.ZONES}
@@ -138,6 +144,12 @@ class GameEngine:
             "teamScore": self.team_score,
             "teamScoreThreshold": GameRules.THRESHOLD,
             "thresholdReached": self.threshold_reached,
+            "completionTargetScore": GameRules.COMPLETION_TARGET_SCORE,
+            "completionTargetNumber": GameRules.COMPLETION_TARGET_NUMBER,
+            "maxTeamScore": GameRules.PERFECT_SCORE,
+            "targetReached": self.team_score >= GameRules.COMPLETION_TARGET_SCORE,
+            "perfectReached": self.team_score >= GameRules.PERFECT_SCORE,
+            "teamFlow": self.team_flow,
             "isGameOver": self.is_game_over,
             "gameOverReason": self.game_over_reason
         }
@@ -338,9 +350,47 @@ class GameEngine:
             "timestamp": datetime.now().isoformat(),
         }
         self.leader_directives.append(directive)
+        self.team_flow = self._infer_team_flow(message)
         msg = "Leader directive broadcasted"
         self._record_event("leader_directive", p_id, directive, True, msg)
         return True, msg
+
+    def _infer_team_flow(self, message):
+        text = message.lower()
+        if any(word in text for word in ["신중", "검증", "확인", "오류", "위험", "안전"]):
+            return {
+                "mode": "cautious",
+                "label": "신중",
+                "description": "정보 확인과 오류 회피를 우선합니다. 에이전트가 설치보다 힌트 제공을 더 자주 선택합니다.",
+                "source": message,
+            }
+        if any(word in text for word in ["속도", "빠르게", "공격", "설치", "내려", "진행"]):
+            return {
+                "mode": "push",
+                "label": "속도전",
+                "description": "설치 속도를 우선합니다. 에이전트가 힌트가 조금 부족해도 설치를 시도할 확률이 올라갑니다.",
+                "source": message,
+            }
+        if any(word in text for word in ["정보", "힌트", "공유", "보고", "색", "진위"]):
+            return {
+                "mode": "information",
+                "label": "정보 정리",
+                "description": "공유 정보 축적을 우선합니다. 에이전트가 서로에게 힌트를 주는 행동을 더 자주 선택합니다.",
+                "source": message,
+            }
+        if any(word in text for word in ["hp", "체력", "휴식", "회복", "아껴", "자원"]):
+            return {
+                "mode": "conserve",
+                "label": "자원 관리",
+                "description": "HP 관리를 우선합니다. 에이전트가 무리한 행동을 줄이고 휴식/갱신을 고려합니다.",
+                "source": message,
+            }
+        return {
+            "mode": "balanced",
+            "label": "균형",
+            "description": "리더 지시를 일반 조율로 해석했습니다. 에이전트가 보드, 손패 기억, HP를 균형 있게 고려합니다.",
+            "source": message,
+        }
 
     def _latest_leader_directive_for(self, agent_id):
         for directive in reversed(self.leader_directives):
@@ -350,7 +400,10 @@ class GameEngine:
         return None
 
     def _check_game_over(self):
-        if self.error_count >= GameRules.MAX_ERRORS:
+        if all(zone["next"] > 5 for zone in self.zones.values()):
+            self.is_game_over = True
+            self.game_over_reason = "All zones completed"
+        elif self.error_count >= GameRules.MAX_ERRORS:
             self.is_game_over = True
             self.game_over_reason = "Max errors reached"
         elif any(p["hp"] <= 0 for p in self.players.values()):
@@ -366,6 +419,28 @@ class GameEngine:
 
         directive = self._latest_leader_directive_for(agent_id)
         directive_text = directive.get("message", "").lower() if directive else ""
+        flow_mode = self.team_flow.get("mode", "balanced")
+        hint_probability = {
+            "balanced": 0.45,
+            "cautious": 0.68,
+            "information": 0.76,
+            "push": 0.32,
+            "conserve": 0.38,
+        }.get(flow_mode, 0.45)
+        confident_install_probability = {
+            "balanced": 0.7,
+            "cautious": 0.52,
+            "information": 0.58,
+            "push": 0.88,
+            "conserve": 0.48,
+        }.get(flow_mode, 0.7)
+        risky_install_probability = {
+            "balanced": 0.2,
+            "cautious": 0.08,
+            "information": 0.12,
+            "push": 0.36,
+            "conserve": 0.06,
+        }.get(flow_mode, 0.2)
 
         potential_targets = [pid for pid in self.players if pid != agent_id and self.players[pid]["hand"]]
         target_id = random.choice(potential_targets) if potential_targets else self.human_id
@@ -390,7 +465,10 @@ class GameEngine:
                 }
             }
 
-        if player["hp"] > 0 and target and target["hand"] and random.random() < 0.45:
+        if flow_mode == "conserve" and player["hp"] < 5 and player["hp"] < GameRules.MAX_HP:
+            return {"type": "rest", "payload": {"reason": "team_flow_conserve"}}
+
+        if player["hp"] > 0 and target and target["hand"] and random.random() < hint_probability:
             for card in target["hand"]:
                 zone = self.zones.get(card["zone"])
                 if zone and card["number"] == zone["next"] and card["truth"] == "genuine":
@@ -425,7 +503,7 @@ class GameEngine:
                 and known_truth == "genuine"
                 and known_zone in self.zones
                 and card["number"] == self.zones[known_zone]["next"]
-                and random.random() < 0.7
+                and random.random() < confident_install_probability
             ):
                 return {
                     "type": "install",
@@ -454,7 +532,7 @@ class GameEngine:
                 }
             }
 
-        if player["hand"] and random.random() < 0.2:
+        if player["hand"] and random.random() < risky_install_probability:
             card = random.choice(player["hand"])
             known_zone = self._known_value_from_hints(card, "zone")
             target_zone = known_zone or random.choice(GameRules.ZONES)

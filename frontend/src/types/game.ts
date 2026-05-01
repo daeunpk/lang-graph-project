@@ -88,6 +88,17 @@ export interface GameState {
   teamScore: number;
   teamScoreThreshold: number;
   thresholdReached: boolean;
+  completionTargetScore?: number;
+  completionTargetNumber?: number;
+  maxTeamScore?: number;
+  targetReached?: boolean;
+  perfectReached?: boolean;
+  teamFlow?: {
+    mode: "balanced" | "cautious" | "information" | "push" | "conserve";
+    label: string;
+    description: string;
+    source?: string;
+  };
   isGameOver: boolean;
   gameOverReason?: string;
   winner?: string;

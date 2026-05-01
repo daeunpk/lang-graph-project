@@ -60,6 +60,11 @@ async def get_result(session_id: str):
         "rewardRule": reward_rule,
         "teamScoreThreshold": state["teamScoreThreshold"],
         "thresholdReached": state["thresholdReached"],
+        "completionTargetScore": state["completionTargetScore"],
+        "completionTargetNumber": state["completionTargetNumber"],
+        "maxTeamScore": state["maxTeamScore"],
+        "targetReached": state["targetReached"],
+        "perfectReached": state["perfectReached"],
         "leaderboard": leaderboard,
     }
 

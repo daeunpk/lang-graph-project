@@ -3,10 +3,10 @@ import { formatTimestamp } from "../../utils/format";
 
 const LEVEL_COLORS = {
   info: "#94a3b8",
-  success: "#4ade80",
-  warning: "#facc15",
-  error: "#f87171",
-  system: "#818cf8",
+  success: "#15803d",
+  warning: "#b45309",
+  error: "#dc2626",
+  system: "#4f46e5",
 };
 
 export function SystemLogPanel() {

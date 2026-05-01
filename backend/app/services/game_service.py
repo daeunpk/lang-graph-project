@@ -205,6 +205,7 @@ class GameService:
 
         if directive:
             reason = f"리더 지시('{directive['message']}')를 고려했습니다. {reason}"
+        flow = engine.team_flow
 
         return {
             "reportId": f"rep_{datetime.now().timestamp()}_{agent_id}",
@@ -214,6 +215,7 @@ class GameService:
             "turn": engine.current_turn,
             "content": (
                 f"이번 턴 제안 행동: {action_label}\n"
+                f"현재 팀 흐름: {flow.get('label', '균형')} - {flow.get('description', '')}\n"
                 f"{reason}\n"
                 f"내 기억: {GameService._format_memory(engine, agent_id)}"
             ),

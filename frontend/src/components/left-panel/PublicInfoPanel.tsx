@@ -56,7 +56,7 @@ export function PublicInfoPanel() {
                 className="player-hp-fill"
                 style={{
                   width: `${(p.hp / p.maxHp) * 100}%`,
-                  backgroundColor: p.hp / p.maxHp > 0.5 ? "#4ade80" : "#f87171",
+                  backgroundColor: p.hp / p.maxHp > 0.5 ? "#15803d" : "#dc2626",
                 }}
               />
             </div>

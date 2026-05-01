@@ -12,6 +12,11 @@ interface ResultData {
   rewardRule: string;
   teamScoreThreshold: number;
   thresholdReached: boolean;
+  completionTargetScore?: number;
+  completionTargetNumber?: number;
+  maxTeamScore?: number;
+  targetReached?: boolean;
+  perfectReached?: boolean;
   leaderboard: Array<{
     playerId: string;
     name: string;
@@ -58,7 +63,24 @@ export default function ResultPage() {
           <div className="result-stats">
             <div className="stat-row">
               <span className="stat-label">팀 완성도 점수</span>
-              <span className="stat-value team">{result.teamScore}/25</span>
+              <span className="stat-value team">
+                {result.teamScore}/{result.maxTeamScore ?? 25}
+              </span>
+            </div>
+            <div className="stat-row">
+              <span className="stat-label">
+                기본 완성 목표
+              </span>
+              <span className={`stat-value ${result.targetReached ? "success" : "error"}`}>
+                {result.completionTargetNumber ?? 4}번까지 / {result.completionTargetScore ?? 20}점
+                {result.targetReached ? " 달성" : " 미달성"}
+              </span>
+            </div>
+            <div className="stat-row">
+              <span className="stat-label">완벽 보너스</span>
+              <span className={`stat-value ${result.perfectReached ? "success" : ""}`}>
+                {result.perfectReached ? "25점 완성" : "5번 설치는 추가 성과"}
+              </span>
             </div>
             <div className="stat-row">
               <span className="stat-label">내 성공 설치 수</span>

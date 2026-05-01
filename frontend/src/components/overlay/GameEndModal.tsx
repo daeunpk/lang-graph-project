@@ -19,6 +19,8 @@ export function GameEndModal({ sessionId }: GameEndModalProps) {
 
   const playerId = localStorage.getItem("playerId") ?? "";
   const breakdown = gameState ? computeScoreBreakdown(gameState, playerId) : null;
+  const maxScore = gameState?.maxTeamScore ?? 25;
+  const targetScore = gameState?.completionTargetScore ?? gameState?.teamScoreThreshold ?? 20;
 
   const handleResult = () => {
     closeModal();
@@ -39,7 +41,13 @@ export function GameEndModal({ sessionId }: GameEndModalProps) {
           <div className="game-end-scores">
             <div className="end-score-row">
               <span>팀 완성도 점수</span>
-              <span className="score-val">{breakdown.teamScore}/25</span>
+              <span className="score-val">{breakdown.teamScore}/{maxScore}</span>
+            </div>
+            <div className="end-score-row">
+              <span>기본 완성 목표</span>
+              <span className="score-val">
+                {gameState?.targetReached ? "달성" : "미달성"} ({targetScore}점)
+              </span>
             </div>
             <div className="end-score-row">
               <span>내 성공 설치 수</span>

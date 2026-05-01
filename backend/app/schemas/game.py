@@ -50,5 +50,10 @@ class GameStateSchema(BaseModel):
     teamScore: int
     teamScoreThreshold: int
     thresholdReached: bool
+    completionTargetScore: int = 20
+    completionTargetNumber: int = 4
+    maxTeamScore: int = 25
+    targetReached: bool = False
+    perfectReached: bool = False
     isGameOver: bool
     gameOverReason: Optional[str] = None

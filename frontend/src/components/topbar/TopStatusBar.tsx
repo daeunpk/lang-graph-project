@@ -36,10 +36,10 @@ export function TopStatusBar() {
                 width: `${((human?.hp ?? 0) / (human?.maxHp ?? 1)) * 100}%`,
                 backgroundColor:
                   (human?.hp ?? 0) / (human?.maxHp ?? 1) > 0.6
-                    ? "#4ade80"
+                    ? "#15803d"
                     : (human?.hp ?? 0) / (human?.maxHp ?? 1) > 0.3
-                    ? "#facc15"
-                    : "#f87171",
+                    ? "#b45309"
+                    : "#dc2626",
               }}
             />
           </div>
