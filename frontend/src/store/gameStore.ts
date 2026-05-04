@@ -48,6 +48,9 @@ export const useGameStore = create<GameStoreState & GameStoreActions>()(
       set((s) => {
         s.gameState = state;
         s.isHumanTurn = state.currentPhase === "human_turn";
+        if (!s.isHumanTurn) {
+          s.selectedCardId = null;
+        }
         
         const myData = state.players.find(p => p.playerId === state.config.playerId);
         

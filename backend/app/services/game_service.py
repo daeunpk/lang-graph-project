@@ -4,6 +4,7 @@ from app.engine.rules import GameRules
 from app.services.websocket_service import manager
 from app.utils.game_helpers import get_filtered_state
 import asyncio
+import random
 from datetime import datetime
 
 class GameService:
@@ -86,110 +87,152 @@ class GameService:
         engine = game_sessions.get_game(session_id)
         if not engine:
             return
+        if getattr(engine, "agent_round_running", False):
+            return
+        engine.agent_round_running = True
 
-        for agent_id in ["agent_1", "agent_2", "agent_3"]:
-            if engine.is_game_over:
-                break
+        try:
+            for agent_id in ["agent_1", "agent_2", "agent_3"]:
+                if engine.is_game_over:
+                    break
 
-            engine.current_phase = "agent_turn"
-            engine.current_actor_id = agent_id
-            engine.turn_started_at = datetime.now().isoformat()
+                engine.current_phase = "agent_turn"
+                engine.current_actor_id = agent_id
+                engine.turn_started_at = datetime.now().isoformat()
+                agent_turn_started_at = engine.turn_started_at
 
-            await manager.broadcast_to_session(session_id, {
-                "type": "game_state",
-                "payload": get_filtered_state(engine, engine.human_id)
-            })
+                await manager.broadcast_to_session(session_id, {
+                    "type": "game_state",
+                    "payload": get_filtered_state(engine, engine.human_id)
+                })
 
-            await manager.broadcast_to_session(session_id, {
-                "type": "generating_start",
-                "payload": {"agentId": agent_id}
-            })
+                await manager.broadcast_to_session(session_id, {
+                    "type": "generating_start",
+                    "payload": {"agentId": agent_id}
+                })
 
-            decision = engine.get_agent_decision(agent_id)
-            report = GameService._build_agent_report(engine, agent_id, decision)
-            engine._record_event("agent_report", agent_id, {
-                "reportId": report["reportId"],
-                "suggestedAction": report["suggestedAction"],
-                "confidence": report["confidence"],
-                "content": report["content"],
-                "uncertainties": report["uncertainties"],
-            }, True, "Agent report generated")
-            await manager.broadcast_to_session(session_id, {
-                "type": "agent_report",
-                "payload": report
-            })
-            await manager.broadcast_to_session(session_id, {
-                "type": "agent_message",
-                "payload": {
-                    "messageId": f"chat_{datetime.now().timestamp()}_{agent_id}",
-                    "agentId": agent_id,
-                    "agentName": engine.players[agent_id]["name"],
-                    "content": GameService._build_agent_chat(engine, agent_id, decision),
-                    "messageType": "free_chat",
-                    "turn": engine.current_turn,
-                    "timestamp": datetime.now().isoformat()
-                }
-            })
-
-            await asyncio.sleep(GameRules.TURN_TIME_LIMIT)
-
-            success, msg = engine.process_action(
-                agent_id,
-                decision["type"],
-                decision.get("payload", {})
-            )
-            if not engine.is_game_over:
-                engine.current_phase = "agent_reporting"
-
-            await manager.broadcast_to_session(session_id, {
-                "type": "generating_end",
-                "payload": {"agentId": agent_id}
-            })
-
-            await manager.broadcast_to_session(session_id, {
-                "type": "log_entry",
-                "payload": {
-                    "logId": f"log_{datetime.now().timestamp()}",
-                    "turn": engine.current_turn,
-                    "level": "success" if success else "error",
-                    "message": f"{engine.players[agent_id]['name']}: {msg}",
-                    "actorId": agent_id,
-                    "actionType": decision["type"],
-                    "timestamp": datetime.now().isoformat()
-                }
-            })
-
-            if success and decision["type"] == "give_info":
-                latest_event = engine.logs[-1] if engine.logs else {}
-                public_message = latest_event.get("payload", {}).get("publicMessage")
+                decision = engine.get_agent_decision(agent_id)
+                report = GameService._build_agent_report(engine, agent_id, decision)
+                engine._record_event("agent_report", agent_id, {
+                    "reportId": report["reportId"],
+                    "suggestedAction": report["suggestedAction"],
+                    "confidence": report["confidence"],
+                    "content": report["content"],
+                    "uncertainties": report["uncertainties"],
+                }, True, "Agent report generated")
+                await manager.broadcast_to_session(session_id, {
+                    "type": "agent_report",
+                    "payload": report
+                })
                 await manager.broadcast_to_session(session_id, {
                     "type": "agent_message",
                     "payload": {
-                        "messageId": f"msg_{datetime.now().timestamp()}",
+                        "messageId": f"chat_{datetime.now().timestamp()}_{agent_id}",
                         "agentId": agent_id,
                         "agentName": engine.players[agent_id]["name"],
-                        "content": public_message or decision["payload"].get("message", "정보를 공유했습니다."),
+                        "content": GameService._build_agent_chat(engine, agent_id, decision),
                         "messageType": "free_chat",
                         "turn": engine.current_turn,
                         "timestamp": datetime.now().isoformat()
                     }
                 })
 
+                await asyncio.sleep(GameRules.TURN_TIME_LIMIT)
+
+                if (
+                    engine.current_phase != "agent_turn"
+                    or engine.current_actor_id != agent_id
+                    or engine.turn_started_at != agent_turn_started_at
+                ):
+                    continue
+
+                success, msg = engine.process_action(
+                    agent_id,
+                    decision["type"],
+                    decision.get("payload", {})
+                )
+                if not engine.is_game_over:
+                    engine.current_phase = "agent_reporting"
+
+                await manager.broadcast_to_session(session_id, {
+                    "type": "generating_end",
+                    "payload": {"agentId": agent_id}
+                })
+
+                await manager.broadcast_to_session(session_id, {
+                    "type": "log_entry",
+                    "payload": {
+                        "logId": f"log_{datetime.now().timestamp()}",
+                        "turn": engine.current_turn,
+                        "level": "success" if success else "error",
+                        "message": f"{engine.players[agent_id]['name']}: {msg}",
+                        "actorId": agent_id,
+                        "actionType": decision["type"],
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+
+                if success and decision["type"] == "give_info":
+                    latest_event = engine.logs[-1] if engine.logs else {}
+                    public_message = latest_event.get("payload", {}).get("publicMessage")
+                    await manager.broadcast_to_session(session_id, {
+                        "type": "agent_message",
+                        "payload": {
+                            "messageId": f"msg_{datetime.now().timestamp()}",
+                            "agentId": agent_id,
+                            "agentName": engine.players[agent_id]["name"],
+                            "content": public_message or decision["payload"].get("message", "정보를 공유했습니다."),
+                            "messageType": "free_chat",
+                            "turn": engine.current_turn,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+
+                await manager.broadcast_to_session(session_id, {
+                    "type": "game_state",
+                    "payload": get_filtered_state(engine, engine.human_id)
+                })
+
+            if not engine.is_game_over:
+                engine.current_turn += 1
+                engine.current_phase = "human_turn"
+                engine.current_actor_id = engine.human_id
+                engine.turn_started_at = datetime.now().isoformat()
+                asyncio.create_task(
+                    GameService._schedule_human_timeout(
+                        session_id,
+                        engine.current_turn,
+                        engine.turn_started_at,
+                    )
+                )
+
             await manager.broadcast_to_session(session_id, {
                 "type": "game_state",
                 "payload": get_filtered_state(engine, engine.human_id)
             })
+        finally:
+            engine.agent_round_running = False
 
-        if not engine.is_game_over:
-            engine.current_turn += 1
-            engine.current_phase = "human_turn"
-            engine.current_actor_id = engine.human_id
-            engine.turn_started_at = datetime.now().isoformat()
+    @staticmethod
+    async def _schedule_human_timeout(session_id, turn, turn_started_at):
+        await asyncio.sleep(GameRules.TURN_TIME_LIMIT)
+        engine = game_sessions.get_game(session_id)
+        if not engine or engine.is_game_over:
+            return
+        if (
+            engine.current_turn != turn
+            or engine.turn_started_at != turn_started_at
+            or engine.current_phase != "human_turn"
+            or engine.current_actor_id != engine.human_id
+        ):
+            return
 
-        await manager.broadcast_to_session(session_id, {
-            "type": "game_state",
-            "payload": get_filtered_state(engine, engine.human_id)
-        })
+        await GameService.perform_action(
+            session_id,
+            engine.human_id,
+            "timeout",
+            {},
+        )
 
     @staticmethod
     def _build_agent_report(engine, agent_id, decision):
@@ -217,8 +260,6 @@ class GameService:
 
         if directive:
             reason = f"리더 지시('{directive['message']}')를 고려했습니다. {reason}"
-        flow = engine.team_flow
-
         return {
             "reportId": f"rep_{datetime.now().timestamp()}_{agent_id}",
             "agentId": agent_id,
@@ -227,7 +268,6 @@ class GameService:
             "turn": engine.current_turn,
             "content": (
                 f"이번 턴 제안 행동: {action_label}\n"
-                f"현재 팀 흐름: {flow.get('label', '균형')} - {flow.get('description', '')}\n"
                 f"{reason}\n"
                 f"내 기억: {GameService._format_memory(engine, agent_id)}"
             ),
@@ -263,19 +303,35 @@ class GameService:
                 "purple": "보라 구역",
             }.get(info_value, info_value)
             type_label = "색" if info_type == "zone" else "진위" if info_type == "truth" else "정보"
-            return f"{target_name}에게 {type_label} 정보를 먼저 공유할게요. 값은 {value_label} 쪽으로 보입니다."
+            return random.choice([
+                f"{target_name} 쪽에 {type_label} 정보를 넘길게요. 제가 보는 값은 {value_label}입니다.",
+                f"잠깐만요, {target_name} 카드에 {type_label} 단서가 있어요. {value_label}로 공유하겠습니다.",
+                f"이건 말해두는 게 좋겠어요. {target_name}에게 {value_label} 정보를 줄게요.",
+            ])
 
         if action_type == "install":
             zone = payload.get("targetZone", "해당")
-            return f"저는 {zone} 구역 설치를 시도해볼게요. 확신이 완벽하진 않지만 지금 흐름상 필요해 보여요."
+            return random.choice([
+                f"저는 {zone} 구역으로 가볼게요. 아주 확실하진 않지만 지금은 시도할 만해 보여요.",
+                f"{zone} 쪽 설치를 해보겠습니다. 틀리면 바로 정보 흐름을 다시 잡아야 해요.",
+                f"제가 보기엔 {zone} 구역이 지금 타이밍이에요. 설치해볼게요.",
+            ])
 
         if action_type == "discard":
-            return "제 손패에서 우선순위가 낮은 카드를 갱신해볼게요. 막힌 정보를 풀어보겠습니다."
+            return random.choice([
+                "제 손패 하나는 우선순위가 낮아 보여요. 갱신해서 흐름을 풀어볼게요.",
+                "이 카드는 오래 들고 가기 애매합니다. 버리고 새 정보를 보겠습니다.",
+                "지금은 무리하게 설치하기보다 손패를 정리하는 쪽이 낫겠어요.",
+            ])
 
         if action_type == "rest":
-            return "이번에는 HP를 아껴둘게요. 다음 행동을 위해 잠깐 정리하겠습니다."
+            return random.choice([
+                "이번엔 HP를 아낄게요. 다음 턴에 움직일 여지를 남기겠습니다.",
+                "조금 쉬어가겠습니다. 지금 무리하면 뒤가 더 불안해져요.",
+                "저는 이번 턴에 숨을 고를게요. 다음 판단을 위해 HP가 필요합니다.",
+            ])
 
-        return f"{agent_name}는 현재 보드와 손패 정보를 다시 확인하고 있어요."
+        return f"{agent_name}: 잠깐 보드랑 손패 기억을 다시 맞춰보고 있어요."
 
     @staticmethod
     def _format_memory(engine, agent_id):

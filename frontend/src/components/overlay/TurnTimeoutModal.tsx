@@ -6,7 +6,7 @@ interface TurnTimeoutModalProps {
 }
 
 export function TurnTimeoutModal({ sessionId }: TurnTimeoutModalProps) {
-  const { activeModal, closeModal, showNotification } = useUIStore();
+  const { activeModal, closeModal } = useUIStore();
 
   if (activeModal !== "turn_timeout") return null;
 
@@ -15,11 +15,6 @@ export function TurnTimeoutModal({ sessionId }: TurnTimeoutModalProps) {
   const handleRest = async () => {
     await sendAction(sessionId, playerId, "timeout", {});
     closeModal();
-  };
-
-  const handleInstall = () => {
-    closeModal();
-    showNotification("카드를 선택하고 슬롯을 클릭하세요.", "info");
   };
 
   return (
@@ -34,9 +29,6 @@ export function TurnTimeoutModal({ sessionId }: TurnTimeoutModalProps) {
         <div className="modal-actions">
           <button className="modal-btn rest" onClick={handleRest}>
             턴 넘기기
-          </button>
-          <button className="modal-btn confirm" onClick={handleInstall}>
-            계속 행동
           </button>
         </div>
       </div>

@@ -65,7 +65,16 @@ class GameEngine:
         deck = []
         for z in GameRules.ZONES:
             numbers = [1, 1, 1, 2, 2, 3, 3, 4, 4, 4]
-            misinformation_indexes = set(random.sample(range(len(numbers)), 2))
+            protected_genuine_indexes = {
+                next(index for index, number in enumerate(numbers) if number == required_number)
+                for required_number in GameRules.NUMBERS
+            }
+            misinformation_pool = [
+                index
+                for index in range(len(numbers))
+                if index not in protected_genuine_indexes
+            ]
+            misinformation_indexes = set(random.sample(misinformation_pool, 2))
             for index, n in enumerate(numbers):
                 truth = "misinformation" if index in misinformation_indexes else "genuine"
                 deck.append({
@@ -172,6 +181,14 @@ class GameEngine:
 
     def process_action(self, p_id, action_type, payload):
         if self.is_game_over: return False, "Game is already over"
+        if p_id not in self.players:
+            return False, "Player not found"
+        if p_id != self.current_actor_id:
+            return False, "It is not this player's turn"
+        if self.players[p_id]["is_human"] and self.current_phase != "human_turn":
+            return False, "Human turn is already over"
+        if not self.players[p_id]["is_human"] and self.current_phase != "agent_turn":
+            return False, "Agent cannot act outside its turn"
         res, msg = False, "Unknown action"
         
         if action_type == "install":
